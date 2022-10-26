@@ -1,0 +1,5 @@
+# iverilog compilation files
+*.out
+
+# iverilog dumps
+*.vcd
