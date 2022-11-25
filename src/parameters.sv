@@ -11,9 +11,9 @@ localparam CACHE_SET_SIZE = 9;     // log(CACHE_SETS_COUNT)
 localparam CACHE_OFFSET_SIZE = 4;  // log(CACHE_LINE_SIZE)
 localparam CACHE_ADDR_SIZE = 19;   // log(MEM_SIZE)
 // BUS sizes
+localparam ADDR1_BUS_SIZE = 19;
+localparam ADDR2_BUS_SIZE = 19;
 localparam DATA1_BUS_SIZE = 16;
 localparam DATA2_BUS_SIZE = 16;
-localparam ADDR1_BUS_SIZE = 1;     // TODO
-localparam ADDR2_BUS_SIZE = 1;     // TODO
-localparam CTR1_BUS_SIZE  = 1;     // TODO
-localparam CTR2_BUS_SIZE  = 1;     // TODO
+localparam CTR1_BUS_SIZE  = 3;     // 0..7
+localparam CTR2_BUS_SIZE  = 2;     // 0..3
