@@ -1,4 +1,6 @@
-`include "cache.sv"
+`include "src/parameters.sv"
+`include "src/commands.sv"
+`include "src/cache.sv"
 
 `define assert(signal, value) \
   if (signal !== value) begin \
@@ -9,55 +11,27 @@
 module test #(parameter _SEED = 225526);
   integer SEED = _SEED;
 
-  // Given parameters
-  localparam MEM_SIZE = 512 * 1024;
-  localparam CACHE_WAY = 2;  // TODO
-  localparam CACHE_TAG_SIZE = 10;
-  localparam CACHE_LINE_SIZE = 16;
-  localparam CACHE_LINE_COUNT = 64;
-  // Calculated parameters
-  localparam CACHE_SIZE = -1;
-  localparam CACHE_SETS_COUNT = -1;
-  localparam CACHE_SET_SIZE = -1;
-  localparam CACHE_OFFSET_SIZE = -1;
-  localparam CACHE_ADDR_SIZE = -1;
-
-  // Commands defenition
-  typedef enum {
-    C1_NOP,
-    C1_READ8,
-    C1_READ16,
-    C1_READ32,
-    C1_INVALIDATE_LINE,
-    C1_WRITE8,
-    C1_WRITE16,
-    C1_WRITE32,
-    C1_RESPONSE
-  } C1_COMMANDS;
-  // Commands
-  typedef enum {
-    C2_NOP,
-    C2_READ_LINE,
-    C2_WRITE_LINE,
-    C2_RESPONSE
-  } C2_COMMANDS;
-
   // Main
-  reg[7:0] ram[0:MEM_SIZE];
+  reg[7:0] ram[MEM_SIZE:0];
   integer memory_pointer = 0;
 
   reg CLK;
   reg RESET;
   always #1 CLK = ~CLK;
 
-  wire A1, D1, C1, A2, D2, C2;
+  wire[ADDR1_BUS_SIZE-1:0] A1;
+  wire[ADDR2_BUS_SIZE-1:0] A2;
+  wire[DATA1_BUS_SIZE-1:0] D1;
+  wire[DATA2_BUS_SIZE-1:0] D2;
+  wire[CTR1_BUS_SIZE-1:0] C1;
+  wire[CTR2_BUS_SIZE-1:0] C2;
 
-  Cache #(3) Cache_instance(CLK, A1, D1, C1, A2, D2, C2, RESET);
+  Cache Cache_instance(CLK, A1, D1, C1, A2, D2, C2, RESET);
 
   initial begin
     // Memory initialization
     for (memory_pointer = 0; memory_pointer < MEM_SIZE; memory_pointer += 1) begin
-      ram[memory_pointer] = $random(SEED)>>16;
+      ram[memory_pointer] = $random(SEED) >> 16;
     end
 
 //     $display("RAM:");

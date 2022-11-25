@@ -3,3 +3,6 @@
 
 # iverilog dumps
 *.vcd
+
+# MS Word temporarty files
+~$*.docx
