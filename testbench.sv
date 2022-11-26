@@ -49,16 +49,20 @@ module test;
     // $display("%0d", C2_WRITE_LINE);
     // $monitor("[%2t] CLK = %d", $time, CLK);
 
-    #1;
+    #5;
     C1 = C1_INVALIDATE_LINE;
-    A1 = 0;
-    #2
-    C1 = C1_NOP;
+    // A1 = 0;
+    // #2
+    // C1 = C1_NOP;
 
     // DUMP everything and finish
     // #20 C_DUMP = 1;
     // #20 M_DUMP = 1;
     #20 $finish;
+  end
+
+  always #1 begin
+    $display("C1=%d, C1_WIRE=%d", C1, C1_WIRE);
   end
 
 //   always @(posedge CLK)

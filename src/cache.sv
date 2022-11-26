@@ -77,7 +77,8 @@ module Cache (
   end
 
   // Main logic
-  always @(C1) begin
+  always @(C1_WIRE) begin
+    $display("C1 Changed");
     if (!working) begin
       working = 1;
       if (C1 == C1_INVALIDATE_LINE) begin
