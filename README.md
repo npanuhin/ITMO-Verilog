@@ -1,13 +1,19 @@
-<h1 align="center"><TODO> [Verilog/Cache on Verilog]</h1>
-<h4 align="center">Homework on <TODO> for the Computer Architecture course at ITMO University</h4>
+<h1 align="center">CPU-Cache-Mem on Verilog</h1>
+<h4 align="center">Homework on CPU-Cache-Mem modeling in Verilog for the Computer Architecture course at ITMO University</h4>
 
 - [Report (in Russian)](https://github.com/npanuhin/ITMO-Verilog/blob/master/report/report.pdf?raw=true)
 
 
 ### Полезные ссылки:
+
+**Общее про кеш на Verilog:**
 - Habr: [Имплементация кэша на Verilog](https://habr.com/ru/post/461611/)
 - [Simple direct-mapped cache simulation on FPGA](https://github.com/psnjk/SimpleCache)
 - YouTube: [Как работает Кэш](https://youtu.be/7n_8cOBpQrg)
+
+**Разное:**
+- Как работать с `inout`: https://www.fpga4student.com/2017/05/how-to-write-verilog-testbench-for.html
+
 
 ### Рассчёт констант
 **Все уравнения:**
