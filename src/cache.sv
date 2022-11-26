@@ -21,12 +21,12 @@ endclass
 
 module Cache (
   input wire CLK,
-  inout wire[ADDR1_BUS_SIZE-1:0] A1,
-  inout wire[DATA1_BUS_SIZE-1:0] D1,
-  inout wire[CTR1_BUS_SIZE-1 :0] C1,
-  inout wire[ADDR2_BUS_SIZE-1:0] A2,
-  inout wire[DATA2_BUS_SIZE-1:0] D2,
-  inout wire[CTR2_BUS_SIZE-1 :0] C2,
+  inout wire[ADDR1_BUS_SIZE-1:0] A1_WIRE,
+  inout wire[DATA1_BUS_SIZE-1:0] D1_WIRE,
+  inout wire[CTR1_BUS_SIZE-1 :0] C1_WIRE,
+  inout wire[ADDR2_BUS_SIZE-1:0] A2_WIRE,
+  inout wire[DATA2_BUS_SIZE-1:0] D2_WIRE,
+  inout wire[CTR2_BUS_SIZE-1 :0] C2_WIRE,
   input wire RESET,
   input wire C_DUMP
 );
@@ -39,6 +39,20 @@ module Cache (
   reg[CACHE_OFFSET_SIZE:0] offset;
 
   // integer set_iterator, line_iterator;
+
+  reg[ADDR1_BUS_SIZE-1:0] A1;
+  reg[ADDR2_BUS_SIZE-1:0] A2;
+  reg[DATA1_BUS_SIZE-1:0] D1;
+  reg[DATA2_BUS_SIZE-1:0] D2;
+  reg[CTR1_BUS_SIZE-1 :0] C1;
+  reg[CTR2_BUS_SIZE-1 :0] C2;
+
+  assign A1_WIRE = A1;
+  assign A2_WIRE = A2;
+  assign D1_WIRE = D1;
+  assign D2_WIRE = D2;
+  assign C1_WIRE = C1;
+  assign C2_WIRE = C2;
 
   initial begin
     for (int set_iterator = 0; set_iterator < CACHE_SETS_COUNT; ++set_iterator) begin
@@ -96,13 +110,17 @@ module Cache (
         end
         tmp_line = null;
 
-        // Если линия не найдена, ну и ладно
+        // Если линия найдена
         if (current_line != null) begin
-          // Записать в память
-          // C2 = C2_WRITE_LINE;
+          if (current_line.dirty) begin
+            // Записать в память
+            C2 = C2_WRITE_LINE;
+            A2 = tag << CACHE_SET_SIZE + set;
+            // TODO D2
+          end
 
           // Очистить линию
-
+          current_line.reset();
         end
       end
       working = 0;
