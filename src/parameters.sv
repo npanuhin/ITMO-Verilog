@@ -17,3 +17,6 @@ localparam DATA1_BUS_SIZE = 16;
 localparam DATA2_BUS_SIZE = 16;
 localparam CTR1_BUS_SIZE  = 3;  // 0..7
 localparam CTR2_BUS_SIZE  = 2;  // 0..3
+
+// Memory initialization seed
+integer SEED = 225526;

@@ -6,6 +6,17 @@ module MemCTR (
   input wire RESET,
   input wire M_DUMP
 );
-	`map_bus2; // Initialize wires
+  `map_bus2; // Initialize wires
+
+  reg[7:0] ram[MEM_SIZE:0];
+
+  task intialize_ram();
+    for (int i = 0; i < MEM_SIZE; ++i) begin
+      ram[i] = $random(SEED) >> 16;
+    end
+  endtask
+
+  initial intialize_ram();
+  always @(RESET) intialize_ram();
 
 endmodule
