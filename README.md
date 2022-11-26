@@ -1,3 +1,9 @@
+<h1 align="center"><TODO> [Verilog/Cache on Verilog]</h1>
+<h4 align="center">Homework on <TODO> for the Computer Architecture course at ITMO University</h4>
+
+- [Report (in Russian)](https://github.com/npanuhin/ITMO-Verilog/blob/master/report/report.pdf?raw=true)
+
+
 ### Полезные ссылки:
 - Habr: [Имплементация кэша на Verilog](https://habr.com/ru/post/461611/)
 - [Simple direct-mapped cache simulation on FPGA](https://github.com/psnjk/SimpleCache)
@@ -10,13 +16,13 @@ CACHE_SIZE = CACHE_LINE_SIZE × CACHE_LINE_COUNT
 CACHE_SETS_COUNT = CACHE_LINE_COUNT / CACHE_WAY
 CACHE_SET_SIZE = log2(CACHE_SETS_COUNT)
 CACHE_OFFSET_SIZE = log2(CACHE_LINE_SIZE)
-CACHE_ADDR_SIZE = log2(MEM_SIZE) = CACHE_TAG_SIZE + CACHE_SET_SIZE
+CACHE_ADDR_SIZE = log2(MEM_SIZE) = CACHE_TAG_SIZE + CACHE_SET_SIZE + CACHE_OFFSET_SIZE
 ```
 
 **Размеры шин:**
 ```
-ADDR1_BUS_SIZE = min(CACHE_TAG_SIZE + CACHE_SET_SIZE, CACHE_OFFSET_SIZE)
+ADDR1_BUS_SIZE = max(CACHE_TAG_SIZE + CACHE_SET_SIZE, CACHE_OFFSET_SIZE)
 ADDR2_BUS_SIZE = CACHE_TAG_SIZE + CACHE_SET_SIZE
-CTR1_BUS_SIZE = 3, потому что коды команд 0..7
-CTR2_BUS_SIZE = 2, потому что коды команд 0..3
+CTR1_BUS_SIZE = 3 | потому что коды команд 0..7
+CTR2_BUS_SIZE = 2 | потому что коды команд 0..3
 ```
