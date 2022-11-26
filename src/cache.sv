@@ -44,8 +44,7 @@ module Cache (
       $display("Set #%0d", set_iterator);
       for (int line_iterator = 0; line_iterator < CACHE_WAY; line_iterator = line_iterator + 1) begin
         tmp_line = sets[set_iterator][line_iterator];
-        tmp_line.data = 256;
-        $display("Line #%0d (%0d): %16b", line_iterator, set_iterator * CACHE_WAY + line_iterator, tmp_line.data);
+        $display("Line #%0d (%0d): %b", line_iterator, set_iterator * CACHE_WAY + line_iterator, tmp_line.data);
       end
       $display();
     end
