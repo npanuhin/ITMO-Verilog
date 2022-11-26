@@ -30,6 +30,9 @@ module Cache (
   input wire RESET,
   input wire C_DUMP
 );
+  `map_bus1; `map_bus2; // Initialize wires
+
+  // Internal cache variables
   CacheLine sets [0:CACHE_SETS_COUNT] [0:CACHE_WAY];  // Total 32 * 2 = 64 cache lines (CACHE_LINE_COUNT)
   CacheLine tmp_set [0:CACHE_WAY];
   CacheLine tmp_line = null, current_line = null;
@@ -37,23 +40,9 @@ module Cache (
   reg[CACHE_TAG_SIZE:0] tag;
   reg[CACHE_SET_SIZE:0] set;
   reg[CACHE_OFFSET_SIZE:0] offset;
-
   // integer set_iterator, line_iterator;
 
-  reg[ADDR1_BUS_SIZE-1:0] A1;
-  reg[ADDR2_BUS_SIZE-1:0] A2;
-  reg[DATA1_BUS_SIZE-1:0] D1;
-  reg[DATA2_BUS_SIZE-1:0] D2;
-  reg[CTR1_BUS_SIZE-1 :0] C1;
-  reg[CTR2_BUS_SIZE-1 :0] C2;
-
-  assign A1_WIRE = A1;
-  assign A2_WIRE = A2;
-  assign D1_WIRE = D1;
-  assign D2_WIRE = D2;
-  assign C1_WIRE = C1;
-  assign C2_WIRE = C2;
-
+  // Initialization
   initial begin
     for (int set_iterator = 0; set_iterator < CACHE_SETS_COUNT; ++set_iterator) begin
       for (int line_iterator = 0; line_iterator < CACHE_WAY; ++line_iterator) begin
@@ -62,6 +51,7 @@ module Cache (
     end
   end
 
+  // Dumping
   always @(posedge C_DUMP) begin
     for (int set_iterator = 0; set_iterator < CACHE_SETS_COUNT; ++set_iterator) begin
       $display("Set #%0d", set_iterator);
@@ -75,6 +65,7 @@ module Cache (
     end
   end
 
+  // Reset
   always @(posedge RESET) begin
     for (int set_iterator = 0; set_iterator < CACHE_SETS_COUNT; ++set_iterator) begin
       for (int line_iterator = 0; line_iterator < CACHE_WAY; ++line_iterator) begin
@@ -85,6 +76,7 @@ module Cache (
     end
   end
 
+  // Main logic
   always @(C1) begin
     if (!working) begin
       working = 1;
