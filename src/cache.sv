@@ -2,7 +2,7 @@ class CacheLine;
   reg valid;
   reg dirty;
   reg[CACHE_TAG_SIZE-1:0] tag;
-  reg[CACHE_LINE_SIZE-1:0] data;
+  reg[7:0] data[CACHE_LINE_SIZE-1:0];
 
   function new();
     this.reset();

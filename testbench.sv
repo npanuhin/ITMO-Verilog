@@ -39,6 +39,7 @@ module test;
   MemCTR Mem_instance(CLK, A2_WIRE, D2_WIRE, C2_WIRE, RESET, M_DUMP);
 
   initial begin
+    // $dumpfile("dump.vcd"); $dumpvars;
     // ----------------------------------------------------- Logic -----------------------------------------------------
     // $monitor("[%2t] CLK = %d, C1_WIRE = %d", $time, CLK, C1_WIRE);
 

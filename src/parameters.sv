@@ -1,9 +1,9 @@
 // Given parameters
 localparam CACHE_WAY = 2;
-localparam CACHE_TAG_SIZE = 10;      // [бит]
-localparam CACHE_LINE_SIZE = 16 * 8; // [бит]  16 байт
+localparam CACHE_TAG_SIZE = 10;    // [бит]
+localparam CACHE_LINE_SIZE = 16;   // [байт]  16 байт
 localparam CACHE_LINE_COUNT = 64;
-localparam MEM_SIZE = 512 * 1024;    // [байт] 512 Кбайт
+localparam MEM_SIZE = 512 * 1024;  // [байт] 512 Кбайт
 // Calculated parameters
 localparam CACHE_SIZE = 1024;      // [байт] CACHE_LINE_SIZE × CACHE_LINE_COUNT
 localparam CACHE_SETS_COUNT = 32;  //        CACHE_LINE_COUNT / CACHE_WAY
