@@ -10,7 +10,7 @@ class CacheLine;
 
   function void reset();
     this.valid = 0;
-    this.dirty = 1;
+    this.dirty = 0;
   endfunction
 
   function void display();
@@ -36,10 +36,10 @@ module Cache (
   CacheLine sets [0:CACHE_SETS_COUNT] [0:CACHE_WAY];  // Total 32 * 2 = 64 cache lines (CACHE_LINE_COUNT)
   CacheLine tmp_set [0:CACHE_WAY];
   CacheLine tmp_line = null, current_line = null;
-  bit working = 0;
   reg[CACHE_TAG_SIZE:0] tag;
   reg[CACHE_SET_SIZE:0] set;
   reg[CACHE_OFFSET_SIZE:0] offset;
+  bit working = 0;
   // integer set_iterator, line_iterator;
 
   // Initialization
@@ -77,46 +77,66 @@ module Cache (
   end
 
   // Main logic
-  always @(C1_WIRE) begin
-    $display("C1 Changed");
+  always @(posedge CLK) begin
     if (!working) begin
-      working = 1;
-      if (C1 == C1_INVALIDATE_LINE) begin
-        $display("Invalidating line");
-        // Если линия Dirty, то записать в память
-        // Затем очистить линию
-        working = 1;
-
-        // Прочитать адрес с A1
-        tag = A1 >> CACHE_SET_SIZE;
-        set = A1 % CACHE_SET_SIZE;
-        #1;
-        offset = A1 % CACHE_OFFSET_SIZE;
-
-        // Найти в sets[set] линию с нужным tag
-        current_line = null;
-        for (int line_iterator = 0; line_iterator < CACHE_WAY; ++line_iterator) begin
-          tmp_line = sets[set][line_iterator];
-          if (tmp_line.tag == tag) begin
-            current_line = tmp_line;
-          end
+      case (C1_WIRE)
+        C1_NOP : begin
+          $display("Cache: C1_NOP");
         end
-        tmp_line = null;
 
-        // Если линия найдена
-        if (current_line != null) begin
-          if (current_line.dirty) begin
-            // Записать в память
-            C2 = C2_WRITE_LINE;
-            A2 = tag << CACHE_SET_SIZE + set;
-            // TODO D2
+        C1_INVALIDATE_LINE : begin
+          $display("Cache: C1_INVALIDATE_LINE, A1 = %b", A1_WIRE);
+          // Если линия Dirty, то записать в память
+          // Затем очистить линию
+          working = 1;
+
+          // Прочитать адрес с A1
+          tag = A1_WIRE >> CACHE_SET_SIZE;
+          set = A1_WIRE % CACHE_SET_SIZE;
+          #2;
+          offset = A1_WIRE % CACHE_OFFSET_SIZE;
+
+          $display("tag = %b, set = %b, offset = %b", tag, set, offset);
+
+          // Найти в sets[set] линию с нужным tag
+          current_line = null;
+          for (int line_iterator = 0; line_iterator < CACHE_WAY; ++line_iterator) begin
+            tmp_line = sets[set][line_iterator];
+            if (tmp_line.tag == tag) begin
+              current_line = tmp_line;
+            end
           end
+          tmp_line = null;
 
-          // Очистить линию
-          current_line.reset();
+          // Если линия найдена
+          if (current_line == null) begin
+            $display("Line not found");
+          end else begin
+            $display("Found line, dirty = %d", current_line.dirty);
+            if (current_line.dirty) begin
+              // Записать в память
+              C2 = C2_WRITE_LINE;
+              A2 = tag << CACHE_SET_SIZE + set;
+              // TODO
+            end
+
+            // Очистить линию
+            current_line.reset();
+          end
+          #1 working = 0;  // Finish when CLK -> 0
         end
-      end
-      working = 0;
+      endcase
+
+      case (C2)
+        C2_NOP : begin
+          $display("Cache: C2_NOP");
+        end
+
+        C2_RESPONSE : begin
+          $display("Cache: C2_RESPONSE");
+          // TODO
+        end
+      endcase
     end
   end
 endmodule

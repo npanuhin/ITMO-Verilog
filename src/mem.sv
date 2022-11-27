@@ -16,7 +16,15 @@ module MemCTR (
     end
   endtask
 
-  initial intialize_ram();
+  initial begin
+    intialize_ram();
+    // $display("RAM:");
+    // for (memory_pointer = 0; memory_pointer < 100; memory_pointer += 1) begin
+    //   $display("[%2d] %d", memory_pointer, ram[memory_pointer]);
+    // end
+    // $display();
+  end
+
   always @(RESET) intialize_ram();
 
 endmodule

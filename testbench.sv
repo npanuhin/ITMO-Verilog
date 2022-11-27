@@ -3,13 +3,13 @@
 
 // BUSes
 `define map_bus1 \
-  reg[ADDR1_BUS_SIZE-1:0] A1; assign A1_WIRE = A1; \
-  reg[DATA1_BUS_SIZE-1:0] D1; assign D1_WIRE = D1; \
-  reg[CTR1_BUS_SIZE-1 :0] C1; assign C1_WIRE = C1;
+  reg[ADDR1_BUS_SIZE-1:0] A1 = 'z; assign A1_WIRE = A1; \
+  reg[DATA1_BUS_SIZE-1:0] D1 = 'z; assign D1_WIRE = D1; \
+  reg[CTR1_BUS_SIZE-1 :0] C1 = 'z; assign C1_WIRE = C1;
 `define map_bus2 \
-  reg[ADDR2_BUS_SIZE-1:0] A2; assign A2_WIRE = A2; \
-  reg[DATA2_BUS_SIZE-1:0] D2; assign D2_WIRE = D2; \
-  reg[CTR2_BUS_SIZE-1 :0] C2; assign C2_WIRE = C2;
+  reg[ADDR2_BUS_SIZE-1:0] A2 = 'z; assign A2_WIRE = A2; \
+  reg[DATA2_BUS_SIZE-1:0] D2 = 'z; assign D2_WIRE = D2; \
+  reg[CTR2_BUS_SIZE-1 :0] C2 = 'z; assign C2_WIRE = C2;
 
 `include "src/cache.sv"
 `include "src/mem.sv"
@@ -33,38 +33,33 @@ module test;
   wire[DATA2_BUS_SIZE-1:0] D2_WIRE;
   wire[CTR1_BUS_SIZE-1 :0] C1_WIRE;
   wire[CTR2_BUS_SIZE-1 :0] C2_WIRE;
-  `map_bus1;
+  `map_bus1; `map_bus2;
 
   Cache Cache_instance(CLK, A1_WIRE, D1_WIRE, C1_WIRE, A2_WIRE, D2_WIRE, C2_WIRE, RESET, C_DUMP);
   MemCTR Mem_instance(CLK, A2_WIRE, D2_WIRE, C2_WIRE, RESET, M_DUMP);
 
   initial begin
-    // $display("RAM:");
-    // for (memory_pointer = 0; memory_pointer < 100; memory_pointer += 1) begin
-    //   $display("[%2d] %d", memory_pointer, ram[memory_pointer]);
-    // end
-    // $display();
-
     // ----------------------------------------------------- Logic -----------------------------------------------------
-    // $display("%0d", C2_WRITE_LINE);
-    // $monitor("[%2t] CLK = %d", $time, CLK);
+    // $monitor("[%2t] CLK = %d, C1_WIRE = %d", $time, CLK, C1_WIRE);
 
-    #5;
+    #1; // CLK -> 1
+    // Передача команды и первой части адреса
     C1 = C1_INVALIDATE_LINE;
-    // A1 = 0;
-    // #2
-    // C1 = C1_NOP;
+    A1 = 0;
+    #2
+    // Передача второй части адреса
+    #1
+    // Завершение взаимодействия
+    C1 = 'bz;
 
     // DUMP everything and finish
-    // #20 C_DUMP = 1;
-    // #20 M_DUMP = 1;
-    #20 $finish;
+    #10;
+    C_DUMP = 1;
+    M_DUMP = 1;
+    #1 $finish;
   end
 
-  always #1 begin
-    $display("C1=%d, C1_WIRE=%d", C1, C1_WIRE);
+  always @(posedge CLK) begin
+    $display("\n[%2t] CLK = %d, C1_WIRE = %d", $time, CLK, C1_WIRE);
   end
-
-//   always @(posedge CLK)
-//     $display("[%0t]\tCLK = %d", $time, CLK);
 endmodule
