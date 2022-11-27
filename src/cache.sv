@@ -39,16 +39,14 @@ module Cache (
   reg[CACHE_TAG_SIZE:0] tag;
   reg[CACHE_SET_SIZE:0] set;
   reg[CACHE_OFFSET_SIZE:0] offset;
-  bit working = 0;
+  bit listening_bus1 = 1, listening_bus2 = 0;
   // integer set_iterator, line_iterator;
 
   // Initialization
   initial begin
-    for (int set_iterator = 0; set_iterator < CACHE_SETS_COUNT; ++set_iterator) begin
-      for (int line_iterator = 0; line_iterator < CACHE_WAY; ++line_iterator) begin
+    for (int set_iterator = 0; set_iterator < CACHE_SETS_COUNT; ++set_iterator)
+      for (int line_iterator = 0; line_iterator < CACHE_WAY; ++line_iterator)
         sets[set_iterator][line_iterator] = new ();
-      end
-    end
   end
 
   // Dumping
@@ -76,15 +74,12 @@ module Cache (
 
   // Main logic
   always @(posedge CLK) begin
-    if (!working) begin
-      case (C1_WIRE)
-        C1_NOP : begin
-          $display("Cache: C1_NOP");
-        end
+    if (listening_bus1) case (C1_WIRE)
+        C1_NOP : $display("Cache: C1_NOP");
 
         C1_INVALIDATE_LINE : begin
           $display("Cache: C1_INVALIDATE_LINE, A1 = %b", A1_WIRE);
-          working = 1;
+          listening_bus1 = 0;
 
           // Прочитать адрес с A1
           tag = A1_WIRE >> CACHE_SET_SIZE;
@@ -98,9 +93,7 @@ module Cache (
           current_line = null;
           for (int line_iterator = 0; line_iterator < CACHE_WAY; ++line_iterator) begin
             tmp_line = sets[set][line_iterator];
-            if (tmp_line.tag == tag) begin
-              current_line = tmp_line;
-            end
+            if (tmp_line.tag == tag) current_line = tmp_line;
           end
 
           if (current_line == null) $display("Line not found");
@@ -117,20 +110,17 @@ module Cache (
             // В конце очистить линию
             current_line.reset();
           end
-          #1 working = 0;  // Finish when CLK -> 0
+          #1 listening_bus1 = 1;  // Finish when CLK -> 0
         end
       endcase
 
-      case (C2)
-        C2_NOP : begin
-          $display("Cache: C2_NOP");
-        end
+    if (listening_bus2) case (C2)
+        C2_NOP : $display("Cache: C2_NOP");
 
         C2_RESPONSE : begin
           $display("Cache: C2_RESPONSE");
           // TODO
         end
       endcase
-    end
   end
 endmodule

@@ -14,11 +14,11 @@
 `include "src/cache.sv"
 `include "src/mem.sv"
 
-`define assert(signal, value) \
-  if (signal !== value) begin \
-    $display("ASSERTION FAILED in %m: signal != value"); \
-    $finish; \
-  end
+// `define assert(signal, value) \
+//   if (signal !== value) begin \
+//     $display("ASSERTION FAILED in %m: signal != value"); \
+//     $finish; \
+//   end
 
 module test;
   reg CLK = 0,
@@ -37,8 +37,6 @@ module test;
 
   Cache Cache_instance(CLK, A1_WIRE, D1_WIRE, C1_WIRE, A2_WIRE, D2_WIRE, C2_WIRE, RESET, C_DUMP);
   MemCTR Mem_instance(CLK, A2_WIRE, D2_WIRE, C2_WIRE, RESET, M_DUMP);
-
-  // always #1 $display();
 
   initial begin
     // ----------------------------------------------------- Logic -----------------------------------------------------
