@@ -3,6 +3,7 @@
 
 - [Report (in Russian)](https://github.com/npanuhin/ITMO-Verilog/blob/master/report/report.pdf?raw=true)
 
+---
 
 ### Полезные ссылки:
 

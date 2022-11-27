@@ -59,7 +59,6 @@ module Cache (
         $write("Line #%0d (%0d): ", line_iterator, set_iterator * CACHE_WAY + line_iterator);
         tmp_line = sets[set_iterator][line_iterator];
         tmp_line.display();
-        tmp_line = null;
       end
       $display();
     end
@@ -71,7 +70,6 @@ module Cache (
       for (int line_iterator = 0; line_iterator < CACHE_WAY; ++line_iterator) begin
         tmp_line = sets[set_iterator][line_iterator];
         tmp_line.reset();
-        tmp_line = null;
       end
     end
   end
@@ -86,8 +84,6 @@ module Cache (
 
         C1_INVALIDATE_LINE : begin
           $display("Cache: C1_INVALIDATE_LINE, A1 = %b", A1_WIRE);
-          // Если линия Dirty, то записать в память
-          // Затем очистить линию
           working = 1;
 
           // Прочитать адрес с A1
@@ -106,21 +102,19 @@ module Cache (
               current_line = tmp_line;
             end
           end
-          tmp_line = null;
 
-          // Если линия найдена
-          if (current_line == null) begin
-            $display("Line not found");
-          end else begin
+          if (current_line == null) $display("Line not found");
+          else begin
+            // Если линия Dirty, то нужно сдампить содержимое в Mem
             $display("Found line, dirty = %d", current_line.dirty);
             if (current_line.dirty) begin
               // Записать в память
               C2 = C2_WRITE_LINE;
               A2 = tag << CACHE_SET_SIZE + set;
-              // TODO
+              // TODO передать данные
             end
 
-            // Очистить линию
+            // В конце очистить линию
             current_line.reset();
           end
           #1 working = 0;  // Finish when CLK -> 0

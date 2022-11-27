@@ -38,28 +38,33 @@ module test;
   Cache Cache_instance(CLK, A1_WIRE, D1_WIRE, C1_WIRE, A2_WIRE, D2_WIRE, C2_WIRE, RESET, C_DUMP);
   MemCTR Mem_instance(CLK, A2_WIRE, D2_WIRE, C2_WIRE, RESET, M_DUMP);
 
+  // always #1 $display();
+
   initial begin
     // ----------------------------------------------------- Logic -----------------------------------------------------
     // $monitor("[%2t] CLK = %d, C1_WIRE = %d", $time, CLK, C1_WIRE);
 
     #1; // CLK -> 1
     // Передача команды и первой части адреса
+    $display("[%2t | CLK=%0d] <Sending C1 and first half of A1>", $time, $time % 2);
     C1 = C1_INVALIDATE_LINE;
-    A1 = 0;
+    A1 = 1;
     #2
     // Передача второй части адреса
+    $display("[%2t | CLK=%0d] <Sending second half of A1>", $time, $time % 2);
+    A1 = 2;
     #1
     // Завершение взаимодействия
+    $display("[%2t | CLK=%0d] <Finished sending>", $time, $time % 2);
     C1 = 'bz;
 
     // DUMP everything and finish
-    #10;
-    C_DUMP = 1;
-    M_DUMP = 1;
+    // #3;
+    // C_DUMP = 1;
+    // M_DUMP = 1;
     #1 $finish;
   end
 
-  always @(posedge CLK) begin
-    $display("\n[%2t] CLK = %d, C1_WIRE = %d", $time, CLK, C1_WIRE);
-  end
+  always @(CLK)
+    $display("[%2t | CLK=%0d] C1_WIRE = %d, C2_WIRE = %d", $time, $time % 2, C1_WIRE, C2_WIRE);
 endmodule

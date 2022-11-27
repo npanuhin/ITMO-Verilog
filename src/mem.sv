@@ -9,13 +9,15 @@ module MemCTR (
   `map_bus2; // Initialize wires
 
   reg[7:0] ram[MEM_SIZE:0];
+  bit working = 0;
 
+  // Initialization & RESET
   task intialize_ram();
     for (int i = 0; i < MEM_SIZE; ++i) begin
       ram[i] = $random(SEED) >> 16;
     end
   endtask
-
+  always @(RESET) intialize_ram();
   initial begin
     intialize_ram();
     // $display("RAM:");
@@ -25,6 +27,11 @@ module MemCTR (
     // $display();
   end
 
-  always @(RESET) intialize_ram();
+  // Main logic
+  always @(posedge CLK) begin
+    if (!working) begin
+
+    end
+  end
 
 endmodule
