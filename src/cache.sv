@@ -1,30 +1,3 @@
-class CacheLine;
-  reg valid;
-  reg dirty;
-  reg[CACHE_TAG_SIZE-1:0] tag;
-  reg[7:0] data[CACHE_LINE_SIZE-1:0];
-
-  function new();
-    reg[7:0] tmp_elem;
-    for (int i = 0; i < CACHE_LINE_SIZE; ++i) begin // Weird array initialization
-      tmp_elem = this.data[i];  // WARNING THIS IS BS
-      tmp_elem = $random(SEED) >> 16; // random is for testing, should be 'x
-    end
-    this.reset();
-  endfunction
-
-  function void reset();
-    this.valid = 0;
-    this.dirty = 0;
-    this.tag = '0;  // '0 is for testing, should be 'x
-  endfunction
-
-  function void display();
-    $display("%b | TAG:%b | V:%d | D:%d", this.data, this.tag, this.valid, this.dirty);
-  endfunction
-endclass
-
-
 module Cache (
   input wire CLK,
   inout wire[ADDR1_BUS_SIZE-1:0] A1_WIRE,
@@ -39,49 +12,52 @@ module Cache (
   `map_bus1; `map_bus2; // Initialize wires
 
   // Internal cache variables
-  CacheLine sets [0:CACHE_SETS_COUNT] [0:CACHE_WAY];  // Total 32 * 2 = 64 cache lines (CACHE_LINE_COUNT)
-  CacheLine tmp_set [0:CACHE_WAY];
-  CacheLine tmp_line = null, current_line = null;
+  reg[7:0] data        [CACHE_SETS_COUNT] [CACHE_WAY] [CACHE_LINE_SIZE];
+  reg[7:0] tags        [CACHE_SETS_COUNT] [CACHE_WAY];
+  reg[1:0] valid_dirty [CACHE_SETS_COUNT] [CACHE_WAY];
+
+  function void reset_line(int cur_set, int cur_line);
+    tags[cur_set][cur_line] = 0;  // For testing, should be 'x
+    valid_dirty[cur_set][cur_line] = 1;  // For testing, should be 0
+    for (int bbyte = 0; bbyte < CACHE_LINE_SIZE; ++bbyte)  // Optional
+      data[cur_set][cur_line][bbyte] = $random(SEED) >> 16;  // For testing, should be 'x
+  endfunction
+
+  function void reset();
+    for (int cur_set = 0; cur_set < CACHE_SETS_COUNT; ++cur_set)
+      for (int cur_line = 0; cur_line < CACHE_WAY; ++cur_line)
+        reset_line(cur_line, cur_line);
+  endfunction
 
   reg[CACHE_TAG_SIZE-1:0] tag;
   reg[CACHE_SET_SIZE-1:0] set;
   reg[CACHE_OFFSET_SIZE-1:0] offset;
 
   reg[CACHE_TAG_SIZE + CACHE_SET_SIZE - 1:0] mem_address;
-  reg[DATA2_BUS_SIZE-1:0] bus2_data;
+  // reg[DATA2_BUS_SIZE-1:0] bus2_data;
 
   bit listening_bus1 = 1, listening_bus2 = 0;
-  // integer set_iterator, line_iterator;
+
+  integer found_line, tmp_start;
 
   // Initialization
-  initial begin
-    for (int set_iterator = 0; set_iterator < CACHE_SETS_COUNT; ++set_iterator)
-      for (int line_iterator = 0; line_iterator < CACHE_WAY; ++line_iterator)
-        sets[set_iterator][line_iterator] = new ();
-  end
+  initial reset();
+
+  // Reset
+  always @(posedge RESET) reset();
 
   // Dumping
-  always @(posedge C_DUMP) begin
-    for (int set_iterator = 0; set_iterator < CACHE_SETS_COUNT; ++set_iterator) begin
-      $display("Set #%0d", set_iterator);
-      for (int line_iterator = 0; line_iterator < CACHE_WAY; ++line_iterator) begin
-        $write("Line #%0d (%0d): ", line_iterator, set_iterator * CACHE_WAY + line_iterator);
-        tmp_line = sets[set_iterator][line_iterator];
-        tmp_line.display();
+  always @(posedge C_DUMP)
+    for (int cur_set = 0; cur_set < CACHE_SETS_COUNT; ++cur_set) begin
+      $display("Set #%0d", cur_set);
+      for (int cur_line = 0; cur_line < CACHE_WAY; ++cur_line) begin
+        $write("Line #%0d (%0d): ", cur_line, cur_set * CACHE_WAY + cur_line);
+        for (int bbyte = 0; bbyte < CACHE_LINE_SIZE; ++bbyte)
+          $write("%b ", data[cur_set][cur_line][bbyte]);
+        $display("| TAG:%b | V:%d | D:%d", tags[cur_set][cur_line], valid_dirty[cur_set][cur_line][1], valid_dirty[cur_set][cur_line][0]);
       end
       $display();
     end
-  end
-
-  // Reset
-  always @(posedge RESET) begin
-    for (int set_iterator = 0; set_iterator < CACHE_SETS_COUNT; ++set_iterator) begin
-      for (int line_iterator = 0; line_iterator < CACHE_WAY; ++line_iterator) begin
-        tmp_line = sets[set_iterator][line_iterator];
-        tmp_line.reset();
-      end
-    end
-  end
 
   // Main logic
   always @(posedge CLK) begin
@@ -100,52 +76,52 @@ module Cache (
 
           $display("tag = %b, set = %b, offset = %b", tag, set, offset);
 
-          // Найти в sets[set] линию с нужным tag
-          current_line = null;
-          for (int line_iterator = 0; line_iterator < CACHE_WAY; ++line_iterator) begin
-            tmp_line = sets[set][line_iterator];
-            if (tmp_line.tag == tag) current_line = tmp_line;
+          // Найти в set-е линию с нужным tag
+          found_line = -1;
+          for (int cur_line = 0; cur_line < CACHE_WAY; ++cur_line) begin
+            if (tags[set][cur_line] == tag) found_line = cur_line;
           end
 
-          if (current_line == null) $display("Line not found");
+          if (found_line == -1) $display("Line not found");
           else begin
             // Если линия Dirty, то нужно сдампить содержимое в Mem
-            $display("Found line, dirty = %d", current_line.dirty);
-            // if (current_line.dirty) begin  // Записать в память
+            $display("Found line #%0d, dirty = %d", found_line, valid_dirty[set][found_line][0]);
+            if (valid_dirty[set][found_line][0]) begin
               C2 = C2_WRITE_LINE;
               mem_address = tag;
               mem_address = (mem_address << CACHE_SET_SIZE) + set;
               A2 = mem_address;
               for (int bbyte = 0; bbyte < CACHE_LINE_SIZE; ++bbyte) begin
-                $display("Sending byte: %d", current_line.data[bbyte]);
+                $display("Sending byte: %d = %b", data[set][found_line][bbyte], data[set][found_line][bbyte]);
               end
               // Передать данные в little-endian
-              // DATA2_BUS_SIZE - ширина шины в байтах
-              for (int bbytes_start = 0; bbytes_start < CACHE_LINE_SIZE; bbytes_start += DATA2_BUS_SIZE / 8) begin
-                for (int bbyte = 0; bbyte < DATA2_BUS_SIZE / 8; ++bbyte) begin
-                  // Little-endian, то есть (пример для двух байт) надо сначала отправить второй байт, потом первый
-                  // D1 = (первый байт, второй байт) -> первый байт: [15:8], второй байт [7:0]
-                  // Байт [bbytes_start + bbyte] нужно записать в bus2_data[8 * (bbyte + 1) - 1: 8 * bbyte]
+              for (int bbytes_start = 0; bbytes_start < CACHE_LINE_SIZE; bbytes_start += DATA2_BUS_SIZE_BYTES) begin  // DATA2_BUS_SIZE - ширина шины в байтах
+                for (int bbyte = 0; bbyte < DATA2_BUS_SIZE_BYTES; ++bbyte) begin
+                  // Little-endian, то есть {пример для двух байт} вначале (слева) идёт второй байт ([15:8]), потом (справа) первый ([7:0])
+                  // Тогда D1 = (второй байт, первый байт) -> второй байт = D2[15:8], первый байт = D2[7:0]
+                  // Примеры:
+                  // байт(bbytes_start + bbyte) -> D2[pos_left:pos_right]
                   // 0 + 0 -> [7:0]
                   // 0 + 1 -> [15:8]
                   // 1 + 0 -> [7:0]
                   // 1 + 1 -> [15:8]
                   // 2 + 0 -> [7:0]
                   // 2 + 1 -> [15:8]
-                  // Гипотетичиски: 100 + 2 = [23:16], 100 + 3 = [31:24]
-                  for (int i = 8 * (bbyte + 1) - 1; i < 8 * bbyte; ++i) begin
-                    bus2_data[i] = current_line.data[bbytes_start + bbyte][i];
+                  // Пусть start = (DATA2_BUS_SIZE_BYTES - 1 - byte) * 8
+                  tmp_start = bbyte * 8;
+                  // Тогда: байт [bbytes_start + bbyte] нужно записать в D2[start+7:start]
+                  // Пример: отправялем два байта reg byte1 = 236 (11101100); reg byte2 = 122 (01111010)
+                  // Тогда отправится reg D2 = 01111010|11101100 - конкатенация двух байтов
+                  for (int i = 0; i < 8; ++i) begin
+                    // $display("D2[%2d] = data[%0d][%0d][%0d + %0d][%0d] = %b", tmp_start + i, set, found_line, bbytes_start, bbyte, i, data[set][found_line][bbytes_start + bbyte][i]);
+                    D2[tmp_start + i] = data[set][found_line][bbytes_start + bbyte][i];
                   end
-                  // integer bla = 8 * (bbyte + 1) - 1;
-                  // integer blabla = 8 * bbyte;
-                  // bus2_data[bla:blabla] = current_line.data[bbytes_start + bbyte];
                 end
-                D2 = bus2_data;
+                $display("D2 <- %b", D2);
                 if (bbytes_start + DATA2_BUS_SIZE / 8 < CACHE_LINE_SIZE) #2;
               end
-            // end
-
-            current_line.reset(); // В конце очистить линию
+            end
+            reset_line(set, found_line);  // В конце очистить линию
           end
           #1 listening_bus1 = 1;  // Finish when CLK -> 0
         end

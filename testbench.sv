@@ -61,7 +61,7 @@ module test;
     // #3;
     // C_DUMP = 1;
     // M_DUMP = 1;
-    #10 $finish;
+    #30 $finish;
   end
 
   always @(CLK)
