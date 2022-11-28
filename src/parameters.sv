@@ -22,4 +22,7 @@ localparam CTR2_BUS_SIZE  = 2;  // 0..3
 integer SEED = 225526;
 
 // Delays
+// localparam CLK_DELAY = 1;
+localparam CACHE_HIT_DELAY = 4;
+localparam CACHE_NOHIT_DELAY = 6;
 localparam MEM_CTR_DELAY = 100;

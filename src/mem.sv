@@ -8,13 +8,13 @@ module MemCTR (
 );
   `map_bus2; // Initialize wires
 
-  reg[7:0] ram[MEM_SIZE:0];
+  reg[7:0] ram[0:MEM_SIZE-1];
   reg[CACHE_ADDR_SIZE-1:0] address;
   bit listening_bus2 = 1;
 
   // Initialization & RESET
   task intialize_ram();
-    for (int i = 0; i < MEM_SIZE; ++i) ram[i] = $random(SEED) >> 16;
+    // for (int i = 0; i < MEM_SIZE; ++i) ram[i] = $random(SEED) >> 16;
   endtask
   always @(RESET) intialize_ram();
   initial begin
@@ -29,7 +29,7 @@ module MemCTR (
   // Main logic
   always @(posedge CLK) begin
     if (listening_bus2) case (C2_WIRE)
-        C2_NOP : $display("[%2t | CLK=%0d] MemCTR: C2_NOP", $time, $time % 2);
+        C2_NOP: $display("[%2t | CLK=%0d] MemCTR: C2_NOP", $time, $time % 2);
 
         C2_READ_LINE: begin
           $display("[%2t | CLK=%0d] MemCTR: C2_READ_LINE", $time, $time % 2);
@@ -39,7 +39,7 @@ module MemCTR (
         C2_WRITE_LINE: begin
           $display("[%2t | CLK=%0d] MemCTR: C2_WRITE_LINE, A2 = %b", $time, $time % 2, A2_WIRE);
           address = A2_WIRE;
-          #MEM_CTR_DELAY;
+          #(MEM_CTR_DELAY * 2);
         end
       endcase
   end

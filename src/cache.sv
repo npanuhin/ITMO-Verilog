@@ -8,7 +8,7 @@ class CacheLine;
     reg[7:0] tmp_elem;
     for (int i = 0; i < CACHE_LINE_SIZE; ++i) begin // Weird array initialization
       tmp_elem = this.data[i];
-      tmp_elem = 'x;
+      tmp_elem = $random(SEED) >> 16; // random is for testing, should be 'x
     end
     this.reset();
   endfunction
@@ -42,10 +42,14 @@ module Cache (
   CacheLine sets [0:CACHE_SETS_COUNT] [0:CACHE_WAY];  // Total 32 * 2 = 64 cache lines (CACHE_LINE_COUNT)
   CacheLine tmp_set [0:CACHE_WAY];
   CacheLine tmp_line = null, current_line = null;
+
   reg[CACHE_TAG_SIZE-1:0] tag;
   reg[CACHE_SET_SIZE-1:0] set;
   reg[CACHE_OFFSET_SIZE-1:0] offset;
+
   reg[CACHE_TAG_SIZE + CACHE_SET_SIZE - 1:0] mem_address;
+  reg[DATA2_BUS_SIZE-1:0] bus2_data;
+
   bit listening_bus1 = 1, listening_bus2 = 0;
   // integer set_iterator, line_iterator;
 
@@ -82,9 +86,9 @@ module Cache (
   // Main logic
   always @(posedge CLK) begin
     if (listening_bus1) case (C1_WIRE)
-        C1_NOP : $display("[%2t | CLK=%0d] Cache: C1_NOP", $time, $time % 2);
+        C1_NOP: $display("[%2t | CLK=%0d] Cache: C1_NOP", $time, $time % 2);
 
-        C1_INVALIDATE_LINE : begin
+        C1_INVALIDATE_LINE: begin
           $display("[%2t | CLK=%0d] Cache: C1_INVALIDATE_LINE, A1 = %b", $time, $time % 2, A1_WIRE);
           listening_bus1 = 0;
 
@@ -107,17 +111,41 @@ module Cache (
           else begin
             // Если линия Dirty, то нужно сдампить содержимое в Mem
             $display("Found line, dirty = %d", current_line.dirty);
-            if (current_line.dirty) begin
-              // Записать в память
+            // if (current_line.dirty) begin  // Записать в память
               C2 = C2_WRITE_LINE;
               mem_address = tag;
               mem_address = (mem_address << CACHE_SET_SIZE) + set;
               A2 = mem_address;
-              // TODO передать данные
-            end
+              for (int bbyte = 0; bbyte < CACHE_LINE_SIZE; ++bbyte) begin
+                $display("Sending byte: %d", current_line.data[bbyte]);
+              end
+              // Передать данные в little-endian
+              // DATA2_BUS_SIZE - ширина шины в байтах
+              for (int bbytes_start = 0; bbytes_start < CACHE_LINE_SIZE; bbytes_start += DATA2_BUS_SIZE / 8) begin
+                for (int bbyte = 0; bbyte < DATA2_BUS_SIZE / 8; ++bbyte) begin
+                  // Little-endian, то есть (пример для двух байт) надо сначала отправить второй байт, потом первый
+                  // D1 = (первый байт, второй байт) -> первый байт: [15:8], второй байт [7:0]
+                  // Байт [bbytes_start + bbyte] нужно записать в bus2_data[8 * (bbyte + 1) - 1: 8 * bbyte]
+                  // 0 + 0 -> [7:0]
+                  // 0 + 1 -> [15:8]
+                  // 1 + 0 -> [7:0]
+                  // 1 + 1 -> [15:8]
+                  // 2 + 0 -> [7:0]
+                  // 2 + 1 -> [15:8]
+                  // Гипотетичиски: 100 + 2 = [23:16], 100 + 3 = [31:24]
+                  for (int i = 8 * (bbyte + 1) - 1; i < 8 * bbyte; ++i) begin
+                    bus2_data[i] = current_line.data[bbytes_start + bbyte][i];
+                  end
+                  // integer bla = 8 * (bbyte + 1) - 1;
+                  // integer blabla = 8 * bbyte;
+                  // bus2_data[bla:blabla] = current_line.data[bbytes_start + bbyte];
+                end
+                D2 = bus2_data;
+                if (bbytes_start + DATA2_BUS_SIZE / 8 < CACHE_LINE_SIZE) #2;
+              end
+            // end
 
-            // В конце очистить линию
-            current_line.reset();
+            current_line.reset(); // В конце очистить линию
           end
           #1 listening_bus1 = 1;  // Finish when CLK -> 0
         end
@@ -126,9 +154,9 @@ module Cache (
       endcase
 
     if (listening_bus2) case (C2_WIRE)
-        C2_NOP : $display("[%2t | CLK=%0d] Cache: C2_NOP", $time, $time % 2);
+        C2_NOP: $display("[%2t | CLK=%0d] Cache: C2_NOP", $time, $time % 2);
 
-        C2_RESPONSE : begin
+        C2_RESPONSE: begin
           $display("[%2t | CLK=%0d] Cache: C2_RESPONSE", $time, $time % 2);
           // TODO
         end
