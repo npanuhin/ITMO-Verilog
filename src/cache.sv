@@ -62,10 +62,10 @@ module Cache (
   // Main logic
   always @(posedge CLK) begin
     if (listening_bus1) case (C1_WIRE)
-        C1_NOP: $display("[%2t | CLK=%0d] Cache: C1_NOP", $time, $time % 2);
+        C1_NOP: $display("[%3t | CLK=%0d] Cache: C1_NOP", $time, $time % 2);
 
         C1_INVALIDATE_LINE: begin
-          $display("[%2t | CLK=%0d] Cache: C1_INVALIDATE_LINE, A1 = %b", $time, $time % 2, A1_WIRE);
+          $display("[%3t | CLK=%0d] Cache: C1_INVALIDATE_LINE, A1 = %b", $time, $time % 2, A1_WIRE);
           listening_bus1 = 0;
 
           // Прочитать адрес с A1
@@ -123,17 +123,20 @@ module Cache (
             end
             reset_line(set, found_line);  // В конце очистить линию
           end
-          #1 listening_bus1 = 1;  // Finish when CLK -> 0
+          #1 begin // Finish when CLK -> 0
+            `close_bus2;
+            listening_bus1 = 1;
+          end
         end
 
         // TODO: Other commands
       endcase
 
     if (listening_bus2) case (C2_WIRE)
-        C2_NOP: $display("[%2t | CLK=%0d] Cache: C2_NOP", $time, $time % 2);
+        C2_NOP: $display("[%3t | CLK=%0d] Cache: C2_NOP", $time, $time % 2);
 
         C2_RESPONSE: begin
-          $display("[%2t | CLK=%0d] Cache: C2_RESPONSE", $time, $time % 2);
+          $display("[%3t | CLK=%0d] Cache: C2_RESPONSE", $time, $time % 2);
           // TODO
         end
       endcase
