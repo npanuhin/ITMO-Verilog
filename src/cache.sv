@@ -38,7 +38,7 @@ module Cache (
 
   bit listening_bus1 = 1, listening_bus2 = 0;
 
-  integer found_line, tmp_start;
+  int found_line, tmp_start;
 
   // Initialization
   initial reset();
@@ -118,7 +118,7 @@ module Cache (
                   end
                 end
                 $display("D2 <- %b", D2);
-                if (bbytes_start + DATA2_BUS_SIZE / 8 < CACHE_LINE_SIZE) #2;
+                if (bbytes_start + DATA2_BUS_SIZE_BYTES < CACHE_LINE_SIZE) #2;
               end
             end
             reset_line(set, found_line);  // В конце очистить линию

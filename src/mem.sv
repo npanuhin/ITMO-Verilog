@@ -10,6 +10,9 @@ module MemCTR (
 
   reg[7:0] ram [MEM_SIZE];
   reg[CACHE_ADDR_SIZE-1:0] address;
+
+  int accum_delay;
+
   bit listening_bus2 = 1;
 
   // Initialization & RESET
@@ -39,7 +42,11 @@ module MemCTR (
         C2_WRITE_LINE: begin
           $display("[%3t | CLK=%0d] MemCTR: C2_WRITE_LINE, A2 = %b", $time, $time % 2, A2_WIRE);
           address = A2_WIRE;
-          #(MEM_CTR_DELAY * 2);
+          accum_delay = 0;
+
+          #(MEM_CTR_DELAY * 2 - accum_delay);
+
+          // TODO
         end
       endcase
   end

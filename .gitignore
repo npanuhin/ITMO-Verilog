@@ -4,6 +4,6 @@
 # iverilog dumps
 *.vcd
 
-# MS Word temporarty files
+# MS Word temporary files
 ~$*.docx
 ~*.tmp

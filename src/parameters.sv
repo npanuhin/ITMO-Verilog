@@ -19,7 +19,7 @@ localparam CTR1_BUS_SIZE  = 3;   // [бит], так как команды 0..7
 localparam CTR2_BUS_SIZE  = 2;   // [бит], так как команды  0..3
 
 // Memory initialization seed
-integer SEED = 225526;
+int SEED = 225526;
 
 // Delays
 // localparam CLK_DELAY = 1;
