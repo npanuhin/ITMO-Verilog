@@ -7,7 +7,7 @@ class CacheLine;
   function new();
     reg[7:0] tmp_elem;
     for (int i = 0; i < CACHE_LINE_SIZE; ++i) begin // Weird array initialization
-      tmp_elem = this.data[i];
+      tmp_elem = this.data[i];  // WARNING THIS IS BS
       tmp_elem = $random(SEED) >> 16; // random is for testing, should be 'x
     end
     this.reset();
