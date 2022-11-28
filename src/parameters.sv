@@ -20,3 +20,6 @@ localparam CTR2_BUS_SIZE  = 2;  // 0..3
 
 // Memory initialization seed
 integer SEED = 225526;
+
+// Delays
+localparam MEM_CTR_DELAY = 100;

@@ -5,12 +5,18 @@ class CacheLine;
   reg[7:0] data[CACHE_LINE_SIZE-1:0];
 
   function new();
+    reg[7:0] tmp_elem;
+    for (int i = 0; i < CACHE_LINE_SIZE; ++i) begin // Weird array initialization
+      tmp_elem = this.data[i];
+      tmp_elem = 'x;
+    end
     this.reset();
   endfunction
 
   function void reset();
     this.valid = 0;
     this.dirty = 0;
+    this.tag = '0;  // '0 is for testing, should be 'x
   endfunction
 
   function void display();
@@ -36,9 +42,10 @@ module Cache (
   CacheLine sets [0:CACHE_SETS_COUNT] [0:CACHE_WAY];  // Total 32 * 2 = 64 cache lines (CACHE_LINE_COUNT)
   CacheLine tmp_set [0:CACHE_WAY];
   CacheLine tmp_line = null, current_line = null;
-  reg[CACHE_TAG_SIZE:0] tag;
-  reg[CACHE_SET_SIZE:0] set;
-  reg[CACHE_OFFSET_SIZE:0] offset;
+  reg[CACHE_TAG_SIZE-1:0] tag;
+  reg[CACHE_SET_SIZE-1:0] set;
+  reg[CACHE_OFFSET_SIZE-1:0] offset;
+  reg[CACHE_TAG_SIZE + CACHE_SET_SIZE - 1:0] mem_address;
   bit listening_bus1 = 1, listening_bus2 = 0;
   // integer set_iterator, line_iterator;
 
@@ -75,10 +82,10 @@ module Cache (
   // Main logic
   always @(posedge CLK) begin
     if (listening_bus1) case (C1_WIRE)
-        C1_NOP : $display("Cache: C1_NOP");
+        C1_NOP : $display("[%2t | CLK=%0d] Cache: C1_NOP", $time, $time % 2);
 
         C1_INVALIDATE_LINE : begin
-          $display("Cache: C1_INVALIDATE_LINE, A1 = %b", A1_WIRE);
+          $display("[%2t | CLK=%0d] Cache: C1_INVALIDATE_LINE, A1 = %b", $time, $time % 2, A1_WIRE);
           listening_bus1 = 0;
 
           // Прочитать адрес с A1
@@ -103,7 +110,9 @@ module Cache (
             if (current_line.dirty) begin
               // Записать в память
               C2 = C2_WRITE_LINE;
-              A2 = tag << CACHE_SET_SIZE + set;
+              mem_address = tag;
+              mem_address = (mem_address << CACHE_SET_SIZE) + set;
+              A2 = mem_address;
               // TODO передать данные
             end
 
@@ -112,13 +121,15 @@ module Cache (
           end
           #1 listening_bus1 = 1;  // Finish when CLK -> 0
         end
+
+        // TODO: Other commands
       endcase
 
-    if (listening_bus2) case (C2)
-        C2_NOP : $display("Cache: C2_NOP");
+    if (listening_bus2) case (C2_WIRE)
+        C2_NOP : $display("[%2t | CLK=%0d] Cache: C2_NOP", $time, $time % 2);
 
         C2_RESPONSE : begin
-          $display("Cache: C2_RESPONSE");
+          $display("[%2t | CLK=%0d] Cache: C2_RESPONSE", $time, $time % 2);
           // TODO
         end
       endcase
