@@ -73,8 +73,7 @@ module Cache (
         listening_bus1 = 0;
         tag = A1_WIRE >> CACHE_SET_SIZE;
         set = A1_WIRE % CACHE_SET_SIZE;
-        #2;
-        offset = A1_WIRE % CACHE_OFFSET_SIZE;
+        #2 offset = A1_WIRE % CACHE_OFFSET_SIZE;
         $display("[%3t | CLK=%0d] tag = %b, set = %b, offset = %b", $time, $time % 2, tag, set, offset);
 
         // Чтение команды окончено, приступаем к выполнению:
@@ -83,9 +82,8 @@ module Cache (
           begin
             // Найти в set-е линию с нужным tag
             found_line = -1;
-            for (int cur_line = 0; cur_line < CACHE_WAY; ++cur_line) begin
+            for (int cur_line = 0; cur_line < CACHE_WAY; ++cur_line)
               if (tags[set][cur_line] == tag) found_line = cur_line;
-            end
 
             if (found_line == -1) $display("Line not found");
             else begin
@@ -96,13 +94,11 @@ module Cache (
                 mem_address = tag;
                 mem_address = (mem_address << CACHE_SET_SIZE) + set;
                 A2 = mem_address;
-                for (int bbyte = 0; bbyte < CACHE_LINE_SIZE; ++bbyte) begin
-                  $display("Sending byte: %d = %b", data[set][found_line][bbyte], data[set][found_line][bbyte]);
-                end
-                // Передать данные в little-endian
+                // for (int bbyte = 0; bbyte < CACHE_LINE_SIZE; ++bbyte)  // Debug
+                //   $display("Sending byte: %d = %b", data[set][found_line][bbyte], data[set][found_line][bbyte]);
                 for (int bbytes_start = 0; bbytes_start < CACHE_LINE_SIZE; bbytes_start += DATA2_BUS_SIZE_BYTES) begin  // DATA2_BUS_SIZE - ширина шины в байтах
                   for (int bbyte = 0; bbyte < DATA2_BUS_SIZE_BYTES; ++bbyte) begin
-                    // Little-endian, то есть {пример для двух байт} вначале (слева) идёт второй байт ([15:8]), потом (справа) первый ([7:0])
+                    // Передать данные в little-endian, то есть {пример для двух байт} вначале (слева) идёт второй байт ([15:8]), потом (справа) первый ([7:0])
                     // Тогда D1 = (второй байт, первый байт) -> второй байт = D2[15:8], первый байт = D2[7:0]
                     // Примеры:
                     // байт(bbytes_start + bbyte) -> D2[pos_left:pos_right]
@@ -131,7 +127,7 @@ module Cache (
               // На последнем такте передачи данных отправляем также C1_RESPONSE
               C1 = C1_RESPONSE;
             end
-            #1 begin // Finish when CLK -> 0
+            #1 begin  // Закрываем все соединиения, когда CLK -> 0
               `close_bus1; `close_bus2;
               listening_bus1 = 0;
             end
@@ -142,13 +138,13 @@ module Cache (
       // TODO: Other commands
     endcase
 
-    if (listening_bus2) case (C2_WIRE)
-      C2_NOP: $display("[%3t | CLK=%0d] Cache: C2_NOP", $time, $time % 2);
+    // if (listening_bus2) case (C2_WIRE)
+    //   C2_NOP: $display("[%3t | CLK=%0d] Cache: C2_NOP", $time, $time % 2);
 
-      C2_RESPONSE: begin
-        $display("[%3t | CLK=%0d] Cache: C2_RESPONSE", $time, $time % 2);
-        // TODO
-      end
-    endcase
+    //   C2_RESPONSE: begin
+    //     $display("[%3t | CLK=%0d] Cache: C2_RESPONSE", $time, $time % 2);
+    //     // TODO
+    //   end
+    // endcase
   end
 endmodule

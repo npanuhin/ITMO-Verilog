@@ -32,23 +32,22 @@ module MemCTR (
   // Main logic
   always @(posedge CLK) begin
     if (listening_bus2) case (C2_WIRE)
-        C2_NOP: $display("[%3t | CLK=%0d] MemCTR: C2_NOP", $time, $time % 2);
+      C2_NOP: $display("[%3t | CLK=%0d] MemCTR: C2_NOP", $time, $time % 2);
 
-        C2_READ_LINE: begin
-          $display("[%3t | CLK=%0d] MemCTR: C2_READ_LINE", $time, $time % 2);
-          // TODO
-        end
+      C2_READ_LINE: begin
+        $display("[%3t | CLK=%0d] MemCTR: C2_READ_LINE", $time, $time % 2);
+        // TODO
+      end
 
-        C2_WRITE_LINE: begin
-          $display("[%3t | CLK=%0d] MemCTR: C2_WRITE_LINE, A2 = %b", $time, $time % 2, A2_WIRE);
-          address = A2_WIRE;
-          accum_delay = 0;
+      C2_WRITE_LINE: begin
+        $display("[%3t | CLK=%0d] MemCTR: C2_WRITE_LINE, A2 = %b", $time, $time % 2, A2_WIRE);
+        address = A2_WIRE;
+        accum_delay = 0;
 
-          #(MEM_CTR_DELAY * 2 - accum_delay);
+        #(MEM_CTR_DELAY * 2 - accum_delay);
 
-          // TODO
-        end
-      endcase
+        // TODO
+      end
+    endcase
   end
-
 endmodule
