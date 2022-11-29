@@ -241,7 +241,6 @@ Found line #1, dirty = 1
 [200 | CLK=0] C1_WIRE = 0, C2_WIRE = 0
 [201 | CLK=1] C1_WIRE = 0, C2_WIRE = 0
 [202 | CLK=0] C1_WIRE = 0, C2_WIRE = 0
-[203 | CLK=1] MemCTR: Sending C2_RESPONSE
 [203 | CLK=1] Cache received C2_RESPONSE
 [203 | CLK=1] C1_WIRE = 7, C2_WIRE = 1
 [203 | CLK=1] CPU received C1_RESPONSE

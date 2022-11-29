@@ -1,0 +1,42 @@
+Testbench: sending C1_READ32, A1 = 0000000000|00010|0000011
+
+[  1 | CLK=1] <Sending C1 and first half of A1>
+[  1 | CLK=1] C1_WIRE = 3, C2_WIRE = z
+[  1 | CLK=1] Cache: C1_READ32, A1 = 000000000000010
+[  2 | CLK=0] C1_WIRE = 3, C2_WIRE = z
+[  3 | CLK=1] <Sending second half of A1>
+[  3 | CLK=1] tag = 0000000000, set = 00010, offset = 0000011
+Found line #1
+[  3 | CLK=1] C1_WIRE = 3, C2_WIRE = z
+[  4 | CLK=0] <Finished sending>
+[  4 | CLK=0] C1_WIRE = 0, C2_WIRE = z
+[  5 | CLK=1] C1_WIRE = 0, C2_WIRE = z
+[  6 | CLK=0] C1_WIRE = 0, C2_WIRE = z
+[  7 | CLK=1] C1_WIRE = 0, C2_WIRE = z
+[  8 | CLK=0] C1_WIRE = 0, C2_WIRE = z
+[  9 | CLK=1] C1_WIRE = 0, C2_WIRE = z
+[ 10 | CLK=0] C1_WIRE = 0, C2_WIRE = z
+[ 11 | CLK=1] Cache: Sending byte:  99 = 01100011
+[ 11 | CLK=1] Cache: Sending byte: 214 = 11010110
+[ 11 | CLK=1] CPU received C1_RESPONSE
+[ 11 | CLK=1] CPU: Received byte:  99 = 01100011
+[ 11 | CLK=1] CPU: Received byte: 214 = 11010110
+[ 11 | CLK=1] C1_WIRE = 7, C2_WIRE = z
+[ 12 | CLK=0] C1_WIRE = 7, C2_WIRE = z
+[ 13 | CLK=1] Cache: Sending byte:  80 = 01010000
+[ 13 | CLK=1] Cache: Sending byte:  85 = 01010101
+[ 13 | CLK=1] CPU: Received byte:  80 = 01010000
+[ 13 | CLK=1] CPU: Received byte:  85 = 01010101
+[ 13 | CLK=1] C1_WIRE = 7, C2_WIRE = z
+[ 14 | CLK=0] C1_WIRE = z, C2_WIRE = z
+[ 15 | CLK=1] C1_WIRE = z, C2_WIRE = z
+[ 16 | CLK=0] C1_WIRE = z, C2_WIRE = z
+[ 17 | CLK=1] C1_WIRE = z, C2_WIRE = z
+[ 18 | CLK=0] C1_WIRE = z, C2_WIRE = z
+[ 19 | CLK=1] C1_WIRE = z, C2_WIRE = z
+[ 20 | CLK=0] C1_WIRE = z, C2_WIRE = z
+[ 21 | CLK=1] C1_WIRE = z, C2_WIRE = z
+[ 22 | CLK=0] C1_WIRE = z, C2_WIRE = z
+[ 23 | CLK=1] C1_WIRE = z, C2_WIRE = z
+[ 24 | CLK=0] C1_WIRE = z, C2_WIRE = z
+testbench.sv:126: $finish called at 25 (1s)

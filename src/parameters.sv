@@ -21,11 +21,6 @@ localparam CTR2_BUS_SIZE  = 2;   // [бит], так как команды  0..3
 int SEED = 225526;
 
 // Delays
-// localparam CLK_DELAY = 1;
 localparam CACHE_HIT_DELAY = 4;
 localparam CACHE_MISS_DELAY = 6;
 localparam MEM_CTR_DELAY = 100;
-
-
-// Derivatives
-// localparam DATA_BUS_SIZE_BYTES = 2;  // DATA_BUS_SIZE / 8

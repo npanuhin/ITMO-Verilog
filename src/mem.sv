@@ -32,7 +32,18 @@ module MemCTR (
     for (int cur_byte = 0; cur_byte < 100; ++cur_byte)  // 100 for testing, should be MEM_SIZE
       $display("Byte %2d: %d = %b", cur_byte, ram[cur_byte], ram[cur_byte]);
 
-  // Main logic
+  // --------------------------------------------------- Main logic ----------------------------------------------------
+  // Передать данные в little-endian, то есть вначале (слева) идёт второй байт ([15:8]), потом (справа) первый ([7:0])
+  // Тогда D = (второй байт, первый байт) -> второй байт = D2[15:8], первый байт = D2[7:0]
+  task send_bytes_D2(input [7:0] bbyte1, input [7:0] bbyte2);
+    $display("[%3t | CLK=%0d] MemCTR: Sending byte: %d = %b", $time, $time % 2, bbyte1, bbyte1);
+    $display("[%3t | CLK=%0d] MemCTR: Sending byte: %d = %b", $time, $time % 2, bbyte2, bbyte2);
+    D2[15:8] = bbyte2; D2[7:0] = bbyte1;
+  endtask
+  task receive_bytes_D2(output [7:0] bbyte1, output [7:0] bbyte2);
+    bbyte2 = D2_WIRE[15:8]; bbyte1 = D2_WIRE[7:0];
+  endtask
+
   always @(posedge CLK) begin
     if (listening_bus2) case (C2_WIRE)
       C2_NOP: $display("[%3t | CLK=%0d] MemCTR: C2_NOP", $time, $time % 2);
@@ -70,7 +81,7 @@ module MemCTR (
         join
 
         // На последнем такте работы отправляем C2_RESPONSE и, когда CLK -> 0, закрываем соединения
-        $display("[%3t | CLK=%0d] MemCTR: Sending C2_RESPONSE", $time, $time % 2);
+        // $display("[%3t | CLK=%0d] MemCTR: Sending C2_RESPONSE", $time, $time % 2);
         C2 = C2_RESPONSE;
         #1 `close_bus2; listening_bus2 = 1;
       end

@@ -51,6 +51,16 @@ module test;
   reg[CACHE_OFFSET_SIZE-1:0] offset;
   reg[CACHE_ADDR_SIZE-1:0] address;
 
+  task send_bytes_D1(input [7:0] bbyte1, input [7:0] bbyte2);
+    $display("[%3t | CLK=%0d] CPU: Sending byte: %d = %b", $time, $time % 2, bbyte1, bbyte1);
+    $display("[%3t | CLK=%0d] CPU: Sending byte: %d = %b", $time, $time % 2, bbyte2, bbyte2);
+    D1[15:8] = bbyte2; D1[7:0] = bbyte1;
+  endtask
+  task receive_bytes_D1();
+    $display("[%3t | CLK=%0d] CPU: Received byte: %d = %b", $time, $time % 2, D1_WIRE[7:0], D1_WIRE[7:0]);
+    $display("[%3t | CLK=%0d] CPU: Received byte: %d = %b", $time, $time % 2, D1_WIRE[15:8], D1_WIRE[15:8]);
+  endtask
+
   initial begin
     // $dumpfile("dump.vcd"); $dumpvars;
     // -------------------------------------------- Test C1_INVALIDATE_LINE --------------------------------------------
@@ -102,6 +112,11 @@ module test;
 
     wait(C1_WIRE == C1_RESPONSE);
     $display("[%3t | CLK=%0d] CPU received C1_RESPONSE", $time, $time % 2);
+
+    for (int bbytes_start = 0; bbytes_start < 32 / 8; bbytes_start += 2) begin
+      receive_bytes_D1();
+      if (bbytes_start + 2 < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
+    end
 
     // -----------------------------------------------------------------------------------------------------------------
     // DUMP everything and finish
