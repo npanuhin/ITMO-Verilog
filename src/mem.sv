@@ -48,21 +48,20 @@ module MemCTR (
         listening_bus2 = 0;
         address = A2_WIRE << CACHE_OFFSET_SIZE;
         fork
-          #(MEM_CTR_DELAY * 2); // С одной стороны ждём MEM_CTR_DELAY тактов до отправки C2_RESPONSE, а с другой параллено читаем и пишем данные
+          #(MEM_CTR_DELAY * 2); // С одной стороны ждём MEM_CTR_DELAY тактов до отправки C2_RESPONSE, а с другой параллельно читаем и пишем данные
           begin
-            // Делаем операцию, обратную той, что описана в cache.sv
-            for (int bbytes_start = 0; bbytes_start < CACHE_LINE_SIZE; bbytes_start += DATA2_BUS_SIZE_BYTES) begin
-              for (int bbyte = 0; bbyte < DATA2_BUS_SIZE_BYTES; ++bbyte) begin
-                for (int i = 0; i < 8; ++i) ram[address][i] = D2_WIRE[bbyte * 8 + i];
-                $display("[%3t | CLK=%0d] Wrote byte %d = %b to ram[%b]", $time, $time % 2, ram[address], ram[address], address);
-                ++address;
-              end
-              if (bbytes_start + DATA2_BUS_SIZE_BYTES < CACHE_LINE_SIZE) begin  // Ждать надо везде, кроме последней передачи данных
-                #2;
-              end
-            end
+            for (int bbytes_start = 0; bbytes_start < CACHE_LINE_SIZE; bbytes_start += 2) begin
 
-            // Чтение окончено, отправляем результат:
+              ram[address] = D2_WIRE[7:0];
+              $display("[%3t | CLK=%0d] Wrote byte %d = %b to ram[%b]", $time, $time % 2, ram[address], ram[address], address);
+              ++address;
+
+              ram[address] = D2_WIRE[15:8];
+              $display("[%3t | CLK=%0d] Wrote byte %d = %b to ram[%b]", $time, $time % 2, ram[address], ram[address], address);
+              ++address;
+
+              if (bbytes_start + 2 < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
+            end
 
             // Тут (в отличии от кэша) на последнем такте передачи данных шиной всё ещё владеет Cache
             // Владение к MemCTR перейдёт только после CLK -> 0

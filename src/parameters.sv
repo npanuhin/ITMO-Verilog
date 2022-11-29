@@ -29,4 +29,4 @@ localparam MEM_CTR_DELAY = 100;
 
 
 // Derivatives
-localparam DATA2_BUS_SIZE_BYTES = 2;  // DATA2_BUS_SIZE / 8
+// localparam DATA2_BUS_SIZE_BYTES = 2;  // DATA2_BUS_SIZE / 8
