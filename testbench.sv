@@ -89,7 +89,7 @@ module test;
     // $display("[%3t | CLK=%0d] CPU received C1_RESPONSE", $time, $time % 2);
 
     // ---------------------------------------------- Test C1_READ8/16/32 ----------------------------------------------
-    tag = 0;
+    tag = 1;
     set = 2;
     offset = 3;
     address = tag;

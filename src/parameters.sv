@@ -20,7 +20,7 @@ localparam CTR2_BUS_SIZE  = 2;   // [бит], так как команды  0..3
 // Memory initialization seed
 int SEED = 225526;
 
-// Delays
-localparam CACHE_HIT_DELAY = 4;
-localparam CACHE_MISS_DELAY = 6;
-localparam MEM_CTR_DELAY = 100;
+// Delays (* 2 because CLK changes every #1, so 1 -> 0 -> 1 equals #2)
+localparam CACHE_HIT_DELAY = 4 * 2;
+localparam CACHE_MISS_DELAY = 6 * 2;
+localparam MEM_CTR_DELAY = 100 * 2;

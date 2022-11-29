@@ -109,6 +109,10 @@ module Cache (
   //     if (valid_dirty[set][found_line][1] == 0 && tags[set][found_line] == tag) find_line = found_line;
   // endfunction
 
+  function int get_spare_line();
+    // TODO
+  endfunction
+
   task handle_c1_read(int read_bits);
     $display("[%3t | CLK=%0d] Cache: C1_READ%0d, A1 = %b", $time, $time % 2, read_bits, A1_WIRE);
     listening_bus1 = 0; parse_A1();
@@ -120,9 +124,11 @@ module Cache (
           #1; C1 = C1_NOP; #1;
         end
         begin // Надо пойти в Mem и прочитать строчку, сохранить её
-          #(CACHE_MISS_DELAY * 2);
-          C2 = C2_READ_LINE; format_A2();
 
+          // TODO отпределить found_line
+
+          #CACHE_MISS_DELAY;
+          C2 = C2_READ_LINE; format_A2();
           #1;
           `close_bus2;
           wait(C2_WIRE == C2_RESPONSE);
@@ -130,6 +136,14 @@ module Cache (
 
           for (int bbytes_start = 0; bbytes_start < CACHE_LINE_SIZE; bbytes_start += 2) begin
             receive_bytes_D2(data[set][found_line][bbytes_start], data[set][found_line][bbytes_start + 1]);
+            $display(
+              "[%3t | CLK=%0d] Cache: Wrote byte %d = %b to data[%0d][%0d][%0d]", $time, $time % 2,
+              data[set][found_line][bbytes_start], data[set][found_line][bbytes_start], set, found_line, bbytes_start
+            );
+            $display(
+              "[%3t | CLK=%0d] Cache: Wrote byte %d = %b to data[%0d][%0d][%0d]", $time, $time % 2,
+              data[set][found_line][bbytes_start + 1], data[set][found_line][bbytes_start + 1], set, found_line, bbytes_start + 1
+            );
             if (bbytes_start + 2 < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
           end
         end
@@ -140,7 +154,7 @@ module Cache (
         begin
           #1; C1 = C1_NOP; #1;
         end
-        #(CACHE_HIT_DELAY * 2);
+        #CACHE_HIT_DELAY;
       join
     end
 
@@ -183,7 +197,7 @@ module Cache (
         if (found_line == -1) begin
           $display("Line not found");
           #1; C1 = C1_NOP; #1;
-          #(CACHE_HIT_DELAY * 2);  // Для реалистичности
+          #CACHE_HIT_DELAY;  // Для реалистичности
         end else begin
           $display("Found line #%0d, dirty = %d", found_line, dirty[set][found_line]);
           // Если линия Dirty, то нужно сдампить её содержимое в Mem
@@ -192,7 +206,7 @@ module Cache (
               begin
                 #1; C1 = C1_NOP; #1;
               end
-              #(CACHE_HIT_DELAY * 2);  // Минимум ждём столько времени, для реалистичности
+              #CACHE_HIT_DELAY;  // Минимум ждём столько времени, для реалистичности
               begin  // Отправка данных в Mem
                 C2 = C2_WRITE_LINE; format_A2();
 

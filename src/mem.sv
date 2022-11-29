@@ -50,16 +50,25 @@ module MemCTR (
 
       C2_READ_LINE: begin
         $display("[%3t | CLK=%0d] MemCTR: C2_READ_LINE", $time, $time % 2);
-        // listening_bus2 = 0;
-        // TODO
+        listening_bus2 = 0; address = A2_WIRE << CACHE_OFFSET_SIZE;
+        #2 C2 = C2_NOP;
+
+        #(MEM_CTR_DELAY - 2);
+
+        C2 = C2_RESPONSE;
+        for (int bbytes_start = 0; bbytes_start < CACHE_LINE_SIZE; bbytes_start += 2) begin
+          send_bytes_D2(ram[address], ram[address + 1]);
+          if (bbytes_start + 2 < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
+        end
+
+        #1 `close_bus2; listening_bus2 = 1;
       end
 
       C2_WRITE_LINE: begin
         $display("[%3t | CLK=%0d] MemCTR: C2_WRITE_LINE, A2 = %b", $time, $time % 2, A2_WIRE);
-        listening_bus2 = 0;
-        address = A2_WIRE << CACHE_OFFSET_SIZE;
+        listening_bus2 = 0; address = A2_WIRE << CACHE_OFFSET_SIZE;
         fork
-          #(MEM_CTR_DELAY * 2);  // С одной стороны ждём MEM_CTR_DELAY тактов до отправки C2_RESPONSE, а с другой параллельно читаем и пишем данные
+          #MEM_CTR_DELAY;  // С одной стороны ждём MEM_CTR_DELAY тактов до отправки C2_RESPONSE, а с другой параллельно читаем и пишем данные
           begin
             for (int bbytes_start = 0; bbytes_start < CACHE_LINE_SIZE; bbytes_start += 2) begin
               receive_bytes_D2(ram[address], ram[address + 1]);
