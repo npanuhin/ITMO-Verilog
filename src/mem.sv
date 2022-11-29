@@ -50,7 +50,7 @@ module MemCTR (
         for (int bbytes_start = 0; bbytes_start < CACHE_LINE_SIZE; bbytes_start += DATA2_BUS_SIZE_BYTES) begin
           for (int bbyte = 0; bbyte < DATA2_BUS_SIZE_BYTES; ++bbyte) begin
             for (int i = 0; i < 8; ++i) ram[address][i] = D2_WIRE[bbyte * 8 + i];
-            $display("Wrote byte %d = %b to ram[%b]", ram[address], ram[address], address);
+            $display("[%3t | CLK=%0d] Wrote byte %d = %b to ram[%b]", $time, $time % 2, ram[address], ram[address], address);
             ++address;
           end
           if (bbytes_start + DATA2_BUS_SIZE_BYTES < CACHE_LINE_SIZE) begin  // Ждать надо везде, кроме последней передачи данных
@@ -58,14 +58,19 @@ module MemCTR (
           end
         end
 
+        // Тут (в отличии от кэша) на последнем такте передачи данных шиной всё ещё владеет Cache
+        // Владение к MemCTR перейдёт только после CLK -> 0
+
         // Чтение окончено, приступаем к выполнению (запись в память параллельно уже была, так что больше нечего выполнять, ну и ладно):
-        if (MEM_CTR_DELAY * 2 - accum_delay > 1) begin
-          #1 C2 = C2_NOP; --accum_delay;
+        if (MEM_CTR_DELAY * 2 - accum_delay > 1) begin // Если MEM_CTR_DELAY будет слишком маленький, то не нужно лишний такт терять на NOP
+          #1; C2 = C2_NOP; #1; // Чтобы дальнейшие дествия были не на CLK -> 0, а на CLK -> 1, надо подождать ещё 1 такт
+          accum_delay += 2;
         end
 
         #(MEM_CTR_DELAY * 2 - accum_delay);
 
-        // На последнем такте работы отправляем C2_RESPONSE и когда CLK -> 0, закрываем соединения
+        // На последнем такте работы отправляем C2_RESPONSE и, когда CLK -> 0, закрываем соединения
+        $display("[%3t | CLK=%0d] sending C2_RESPONSE", $time, $time % 2);
         C2 = C2_RESPONSE;
         #1 `close_bus2; listening_bus2 = 1;
       end

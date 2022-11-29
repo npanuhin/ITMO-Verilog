@@ -144,7 +144,7 @@ module Cache (
           end
         end
 
-        // На последнем такте работы отправляем C1_RESPONSE и когда CLK -> 0, закрываем соединения
+        // На последнем такте работы отправляем C1_RESPONSE и, когда CLK -> 0, закрываем соединения
         C1 = C1_RESPONSE;
         #1; `close_bus1; `close_bus2; listening_bus1 = 1;
       end

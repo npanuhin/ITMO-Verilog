@@ -44,7 +44,7 @@ module test;
     // $dumpfile("dump.vcd"); $dumpvars;
     // ----------------------------------------------------- Logic -----------------------------------------------------
     // $monitor("[%3t] CLK = %d, C1_WIRE = %d", $time, CLK, C1_WIRE);
-    $display("Testbecnh: sending C1_INVALIDATE_LINE, A1 = %22b\n", (1 << CACHE_OFFSET_SIZE) + 2);
+    $display("Testbench: sending C1_INVALIDATE_LINE, A1 = %22b\n", (1 << CACHE_OFFSET_SIZE) + 2);
 
     #1; // CLK -> 1
     // Передача команды и первой части адреса
