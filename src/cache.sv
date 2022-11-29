@@ -60,11 +60,72 @@ module Cache (
     end
 
   // --------------------------------------------------- Main logic ----------------------------------------------------
+  // Parses A1, duration: 2 tacts
+  task parse_A1();
+    tag = `discard_last_n_bits(A1_WIRE, CACHE_SET_SIZE);
+    set = `last_n_bits(A1_WIRE, CACHE_SET_SIZE);
+    #2 offset = A1_WIRE;
+    $display("[%3t | CLK=%0d] tag = %b, set = %b, offset = %b", $time, $time % 2, tag, set, offset);
+  endtask
+
+  // Searches valid lines
+  function int find_line();
+    find_line = -1;
+    for (int cur_line = 0; cur_line < CACHE_WAY; ++cur_line)
+      if (valid_dirty[set][cur_line][1] == 0 && tags[set][cur_line] == tag) find_line = cur_line;
+  endfunction
+
   task handle_c1_read(int read_bits);
-    // TODO
+    $display("[%3t | CLK=%0d] Cache: C1_READ%0d, A1 = %b", $time, $time % 2, read_bits, A1_WIRE);
+    listening_bus1 = 0;
+    parse_A1();
+    // Чтение окончено, приступаем к выполнению:
+    // Найти в set-е линию с нужным tag
+    found_line = find_line();
+    if (found_line == -1) begin
+      $display("Line not found");
+      fork
+        #1 C1 = C1_NOP;
+        begin // Надо пойти в Mem и прочитать строчку, сохранить её
+          #(CACHE_MISS_DELAY * 2);
+          // TODO
+        end
+      join
+    end else begin
+      $display("Found line #%0d, dirty = %d", found_line, valid_dirty[set][found_line][0]);
+      fork
+        #1 C1 = C1_NOP;
+        #(CACHE_HIT_DELAY * 2);
+      join
+    end
+
+    // Оправляем данные в CPU
+    C1 = C1_RESPONSE;
+
+    case (read_bits)
+      8: begin
+        // TODO
+      end
+      16: begin
+        // TODO
+      end
+      32: begin
+        // TODO
+      end
+    endcase
+
+    // На последнем такте работы отправляем C1_RESPONSE и, когда CLK -> 0, закрываем соединения
+    C1 = C1_RESPONSE;
+    #1; `close_bus1; listening_bus1 = 1;
   endtask
 
   task handle_c1_write(int write_bits);
+    $display("[%3t | CLK=%0d] Cache: C1_WRITE%0d, A1 = %b", $time, $time % 2, write_bits, A1_WIRE);
+    listening_bus1 = 0;
+    parse_A1();
+    // Чтение окончено, приступаем к выполнению:
+    // Найти в set-е линию с нужным tag
+    found_line = find_line();
     // TODO
   endtask
 
@@ -83,17 +144,10 @@ module Cache (
       C1_INVALIDATE_LINE: begin
         $display("[%3t | CLK=%0d] Cache: C1_INVALIDATE_LINE, A1 = %b", $time, $time % 2, A1_WIRE);
         listening_bus1 = 0;
-        tag = `discard_last_n_bits(A1_WIRE, CACHE_SET_SIZE);
-        set = `last_n_bits(A1_WIRE, CACHE_SET_SIZE);
-        #2;
-        offset = A1_WIRE;
-        $display("[%3t | CLK=%0d] tag = %b, set = %b, offset = %b", $time, $time % 2, tag, set, offset);
-
+        parse_A1();
         // Чтение окончено, приступаем к выполнению:
         // Найти в set-е линию с нужным tag
-        found_line = -1;
-        for (int cur_line = 0; cur_line < CACHE_WAY; ++cur_line)
-          if (tags[set][cur_line] == tag) found_line = cur_line;
+        found_line = find_line();
 
         if (found_line == -1) $display("Line not found");
         else begin
@@ -146,7 +200,7 @@ module Cache (
 
         // На последнем такте работы отправляем C1_RESPONSE и, когда CLK -> 0, закрываем соединения
         C1 = C1_RESPONSE;
-        #1; `close_bus1; `close_bus2; listening_bus1 = 1;
+        #1; `close_bus1; listening_bus1 = 1;
       end
     endcase
 

@@ -262,4 +262,4 @@ Sending byte:  70 = 01000110
 [210 | CLK=0] C1_WIRE = z, C2_WIRE = z
 [211 | CLK=1] C1_WIRE = z, C2_WIRE = z
 [212 | CLK=0] C1_WIRE = z, C2_WIRE = z
-testbench.sv:86: $finish called at 213 (1s)
+testbench.sv:111: $finish called at 213 (1s)
