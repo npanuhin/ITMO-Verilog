@@ -16,18 +16,18 @@ module Cache (
   reg[7:0] tags        [CACHE_SETS_COUNT] [CACHE_WAY];
   reg[1:0] valid_dirty [CACHE_SETS_COUNT] [CACHE_WAY];
 
-  function void reset_line(int cur_set, int cur_line);
+  task reset_line(int cur_set, int cur_line);
     tags[cur_set][cur_line] = 0;  // For testing, should be 'x
     valid_dirty[cur_set][cur_line] = 1;  // For testing, should be 0
     for (int bbyte = 0; bbyte < CACHE_LINE_SIZE; ++bbyte)  // Optional
       data[cur_set][cur_line][bbyte] = $random(SEED) >> 16;  // For testing, should be 'x
-  endfunction
+  endtask
 
-  function void reset();
+  task reset();
     for (int cur_set = 0; cur_set < CACHE_SETS_COUNT; ++cur_set)
       for (int cur_line = 0; cur_line < CACHE_WAY; ++cur_line)
         reset_line(cur_line, cur_line);
-  endfunction
+  endtask
 
   reg[CACHE_TAG_SIZE-1:0] tag;
   reg[CACHE_SET_SIZE-1:0] set;
@@ -40,10 +40,8 @@ module Cache (
 
   int found_line, tmp_start;
 
-  // Initialization
+  // Initialization & RESET
   initial reset();
-
-  // Reset
   always @(posedge RESET) reset();
 
   // Dumping
@@ -62,12 +60,27 @@ module Cache (
       $display();
     end
 
-  // Main logic
+  // --------------------------------------------------- Main logic ----------------------------------------------------
+  task handle_c1_read(int read_bits);
+    // TODO
+  endtask
+
+  task handle_c1_write(int write_bits);
+    // TODO
+  endtask
+
   always @(posedge CLK) begin
     if (listening_bus1) case (C1_WIRE)
       C1_NOP: $display("[%3t | CLK=%0d] Cache: C1_NOP", $time, $time % 2);
 
-      // -------------------------------------------------------------------------------------------------------------
+      C1_READ8: handle_c1_read(8);
+      C1_READ16: handle_c1_read(16);
+      C1_READ32: handle_c1_read(32);
+
+      C1_WRITE8: handle_c1_write(8);
+      C1_WRITE16: handle_c1_write(16);
+      C1_WRITE32: handle_c1_write(32);
+
       C1_INVALIDATE_LINE: begin
         $display("[%3t | CLK=%0d] Cache: C1_INVALIDATE_LINE, A1 = %b", $time, $time % 2, A1_WIRE);
         listening_bus1 = 0;
@@ -132,8 +145,6 @@ module Cache (
         C1 = C1_RESPONSE;
         #1; `close_bus1; `close_bus2; listening_bus1 = 1;
       end
-
-      // TODO: Other commands
     endcase
 
     // if (listening_bus2) case (C2_WIRE)
