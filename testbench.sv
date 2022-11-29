@@ -59,11 +59,15 @@ module test;
     $display("[%3t | CLK=%0d] <Finished sending>", $time, $time % 2);
     `close_bus1;
 
+    wait(C1_WIRE == C1_RESPONSE);
+
+    $display("[%3t | CLK=%0d] CPU received C1_RESPONSE", $time, $time % 2);
+
     // DUMP everything and finish
     // #3;
     // C_DUMP = 1;
     // M_DUMP = 1;
-    #300 $finish;
+    #10 $finish;
   end
 
   always @(CLK)
