@@ -6,7 +6,7 @@ module MemCTR (
   input wire RESET,
   input wire M_DUMP
 );
-  `map_bus2; // Initialize wires
+  `map_bus2;  // Initialize wires
 
   reg[7:0] ram [MEM_SIZE];
   reg[CACHE_ADDR_SIZE-1:0] address;
@@ -59,24 +59,20 @@ module MemCTR (
         listening_bus2 = 0;
         address = A2_WIRE << CACHE_OFFSET_SIZE;
         fork
-          #(MEM_CTR_DELAY * 2); // С одной стороны ждём MEM_CTR_DELAY тактов до отправки C2_RESPONSE, а с другой параллельно читаем и пишем данные
+          #(MEM_CTR_DELAY * 2);  // С одной стороны ждём MEM_CTR_DELAY тактов до отправки C2_RESPONSE, а с другой параллельно читаем и пишем данные
           begin
             for (int bbytes_start = 0; bbytes_start < CACHE_LINE_SIZE; bbytes_start += 2) begin
-
-              ram[address] = D2_WIRE[7:0];
+              receive_bytes_D2(ram[address], ram[address + 1]);
               $display("[%3t | CLK=%0d] MemCTR: Wrote byte %d = %b to ram[%b]", $time, $time % 2, ram[address], ram[address], address);
               ++address;
-
-              ram[address] = D2_WIRE[15:8];
               $display("[%3t | CLK=%0d] MemCTR: Wrote byte %d = %b to ram[%b]", $time, $time % 2, ram[address], ram[address], address);
               ++address;
-
               if (bbytes_start + 2 < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
             end
 
             // Тут (в отличии от кэша) на последнем такте передачи данных шиной всё ещё владеет Cache
             // Владение к MemCTR перейдёт только после CLK -> 0
-            #1; C2 = C2_NOP; #1; // Чтобы дальнейшие дествия были не на CLK -> 0, а на CLK -> 1, надо подождать ещё 1 такт (второй поток может закончиться раньше)
+            #1; C2 = C2_NOP; #1;
           end
         join
 

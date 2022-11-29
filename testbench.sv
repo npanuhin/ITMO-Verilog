@@ -71,7 +71,7 @@ module test;
     // address = (((address << CACHE_SET_SIZE) + set) << CACHE_OFFSET_SIZE) + offset;
     // $display("Testbench: sending C1_INVALIDATE_LINE, A1 = %b|%b|%b\n", tag, set, offset);
 
-    // #1; // CLK -> 1
+    // #1;  // CLK -> 1
     // // Передача команды и первой части адреса
     // $display("[%3t | CLK=%0d] <Sending C1 and first half of A1>", $time, $time % 2);
     // C1 = C1_INVALIDATE_LINE;
@@ -96,7 +96,7 @@ module test;
     address = (((address << CACHE_SET_SIZE) + set) << CACHE_OFFSET_SIZE) + offset;
     $display("Testbench: sending C1_READ32, A1 = %b|%b|%b\n", tag, set, offset);
 
-    #1; // CLK -> 1
+    #1;  // CLK -> 1
     // Передача команды и первой части адреса
     $display("[%3t | CLK=%0d] <Sending C1 and first half of A1>", $time, $time % 2);
     C1 = C1_READ32;

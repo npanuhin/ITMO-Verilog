@@ -4,7 +4,7 @@ module not_tb;
   wire out;
 
   not_switch not_instance(.out(out), .in(in_value));
-  //not_switch not_instance1(.out(out), .in(out)); // короткое замыкание
+  // not_switch not_instance1(.out(out), .in(out));  // короткое замыкание
 
   initial begin
     $dumpfile("dump.vcd");

@@ -9,7 +9,7 @@ module Cache (
   input wire RESET,
   input wire C_DUMP
 );
-  `map_bus1; `map_bus2; // Initialize wires
+  `map_bus1; `map_bus2;  // Initialize wires
 
   // Internal cache variables
   reg[7:0] data [CACHE_SETS_COUNT] [CACHE_WAY] [CACHE_LINE_SIZE];
@@ -116,7 +116,9 @@ module Cache (
     if (found_line == -1) begin
       $display("Line not found, reading from Mem");
       fork
-        #1 C1 = C1_NOP;  // Второй поток всегда закончиться позже
+        begin
+          #1; C1 = C1_NOP; #1;
+        end
         begin // Надо пойти в Mem и прочитать строчку, сохранить её
           #(CACHE_MISS_DELAY * 2);
           C2 = C2_READ_LINE; format_A2();
@@ -136,7 +138,7 @@ module Cache (
       $display("Found line #%0d", found_line);
       fork
         begin
-          #1; C1 = C1_NOP; #1;  // Второй поток может закончиться раньше
+          #1; C1 = C1_NOP; #1;
         end
         #(CACHE_HIT_DELAY * 2);
       join
@@ -153,9 +155,7 @@ module Cache (
         send_bytes_D1(data[set][found_line][offset + 2], data[set][found_line][offset + 3]);
       end
     endcase
-
-    // Когда CLK -> 0, закрываем соединения
-    #1; `close_bus1; listening_bus1 = 1;
+    #1; `close_bus1; listening_bus1 = 1;  // Когда CLK -> 0, закрываем соединения
   endtask
 
   task handle_c1_write(int write_bits);
@@ -183,14 +183,16 @@ module Cache (
         if (found_line == -1) begin
           $display("Line not found");
           #1; C1 = C1_NOP; #1;
-          #(CACHE_HIT_DELAY * 2); // Для реалистичности
+          #(CACHE_HIT_DELAY * 2);  // Для реалистичности
         end else begin
           $display("Found line #%0d, dirty = %d", found_line, dirty[set][found_line]);
           // Если линия Dirty, то нужно сдампить её содержимое в Mem
           if (dirty[set][found_line]) begin
             fork
-              #1 C1 = C1_NOP;  // Второй поток всегда закончиться позже
-              #(CACHE_HIT_DELAY * 2); // Минимум ждём столько времени, для реалистичности
+              begin
+                #1; C1 = C1_NOP; #1;
+              end
+              #(CACHE_HIT_DELAY * 2);  // Минимум ждём столько времени, для реалистичности
               begin  // Отправка данных в Mem
                 C2 = C2_WRITE_LINE; format_A2();
 
