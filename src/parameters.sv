@@ -13,8 +13,7 @@ localparam CACHE_ADDR_SIZE = 22;   // [бит]  log(MEM_SIZE)
 // BUS sizes
 localparam ADDR1_BUS_SIZE = 15;  // [бит]
 localparam ADDR2_BUS_SIZE = 15;  // [бит]
-localparam DATA1_BUS_SIZE = 16;  // [бит] по условию
-localparam DATA2_BUS_SIZE = 16;  // [бит] по условию
+localparam DATA_BUS_SIZE  = 16;  // [бит] по условию
 localparam CTR1_BUS_SIZE  = 3;   // [бит], так как команды 0..7
 localparam CTR2_BUS_SIZE  = 2;   // [бит], так как команды  0..3
 
@@ -29,4 +28,4 @@ localparam MEM_CTR_DELAY = 100;
 
 
 // Derivatives
-// localparam DATA2_BUS_SIZE_BYTES = 2;  // DATA2_BUS_SIZE / 8
+// localparam DATA_BUS_SIZE_BYTES = 2;  // DATA_BUS_SIZE / 8

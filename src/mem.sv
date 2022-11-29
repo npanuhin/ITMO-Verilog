@@ -1,7 +1,7 @@
 module MemCTR (
   input wire CLK,
   inout wire[ADDR2_BUS_SIZE-1:0] A2_WIRE,
-  inout wire[DATA2_BUS_SIZE-1:0] D2_WIRE,
+  inout wire[DATA_BUS_SIZE-1:0] D2_WIRE,
   inout wire[CTR2_BUS_SIZE-1 :0] C2_WIRE,
   input wire RESET,
   input wire M_DUMP
@@ -53,11 +53,11 @@ module MemCTR (
             for (int bbytes_start = 0; bbytes_start < CACHE_LINE_SIZE; bbytes_start += 2) begin
 
               ram[address] = D2_WIRE[7:0];
-              $display("[%3t | CLK=%0d] Wrote byte %d = %b to ram[%b]", $time, $time % 2, ram[address], ram[address], address);
+              $display("[%3t | CLK=%0d] MemCTR: Wrote byte %d = %b to ram[%b]", $time, $time % 2, ram[address], ram[address], address);
               ++address;
 
               ram[address] = D2_WIRE[15:8];
-              $display("[%3t | CLK=%0d] Wrote byte %d = %b to ram[%b]", $time, $time % 2, ram[address], ram[address], address);
+              $display("[%3t | CLK=%0d] MemCTR: Wrote byte %d = %b to ram[%b]", $time, $time % 2, ram[address], ram[address], address);
               ++address;
 
               if (bbytes_start + 2 < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
@@ -65,12 +65,12 @@ module MemCTR (
 
             // Тут (в отличии от кэша) на последнем такте передачи данных шиной всё ещё владеет Cache
             // Владение к MemCTR перейдёт только после CLK -> 0
-            #1; C2 = C2_NOP; #1; // Чтобы дальнейшие дествия были не на CLK -> 0, а на CLK -> 1, надо подождать ещё 1 такт
+            #1; C2 = C2_NOP; #1; // Чтобы дальнейшие дествия были не на CLK -> 0, а на CLK -> 1, надо подождать ещё 1 такт (второй поток может закончиться раньше)
           end
         join
 
         // На последнем такте работы отправляем C2_RESPONSE и, когда CLK -> 0, закрываем соединения
-        $display("[%3t | CLK=%0d] sending C2_RESPONSE", $time, $time % 2);
+        $display("[%3t | CLK=%0d] MemCTR: Sending C2_RESPONSE", $time, $time % 2);
         C2 = C2_RESPONSE;
         #1 `close_bus2; listening_bus2 = 1;
       end

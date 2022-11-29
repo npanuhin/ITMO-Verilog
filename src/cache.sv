@@ -1,10 +1,10 @@
 module Cache (
   input wire CLK,
   inout wire[ADDR1_BUS_SIZE-1:0] A1_WIRE,
-  inout wire[DATA1_BUS_SIZE-1:0] D1_WIRE,
+  inout wire[DATA_BUS_SIZE-1:0] D1_WIRE,
   inout wire[CTR1_BUS_SIZE-1 :0] C1_WIRE,
   inout wire[ADDR2_BUS_SIZE-1:0] A2_WIRE,
-  inout wire[DATA2_BUS_SIZE-1:0] D2_WIRE,
+  inout wire[DATA_BUS_SIZE-1:0] D2_WIRE,
   inout wire[CTR2_BUS_SIZE-1 :0] C2_WIRE,
   input wire RESET,
   input wire C_DUMP
@@ -33,7 +33,7 @@ module Cache (
   reg[CACHE_SET_SIZE-1:0] set;
   reg[CACHE_OFFSET_SIZE-1:0] offset;
   reg[CACHE_TAG_SIZE + CACHE_SET_SIZE - 1:0] mem_address;
-  // reg[DATA2_BUS_SIZE-1:0] bus2_data;
+  // reg[DATA_BUS_SIZE-1:0] bus2_data;
 
   bit listening_bus1 = 1, listening_bus2 = 0;
 
@@ -60,6 +60,16 @@ module Cache (
     end
 
   // --------------------------------------------------- Main logic ----------------------------------------------------
+  // Sends bytes to data bus in little-endian format
+  task send_bytes(input [DATA_BUS_SIZE-1:0] data_bus, input [7:0] bbyte1, input [7:0] bbyte2);
+    $display("[%3t | CLK=%0d] Cache: Sending byte: %d = %b", $time, $time % 2, bbyte1, bbyte1);
+    $display("[%3t | CLK=%0d] Cache: Sending byte: %d = %b", $time, $time % 2, bbyte2, bbyte2);
+    // Передать данные в little-endian, то есть вначале (слева) идёт второй байт ([15:8]), потом (справа) первый ([7:0])
+    // Тогда D1 = (второй байт, первый байт) -> второй байт = D2[15:8], первый байт = D2[7:0]
+    D2[15:8] = bbyte2;
+    D2[7:0] = bbyte1;
+  endtask
+
   // Parses A1, duration: 2 tacts
   task parse_A1();
     tag = `discard_last_n_bits(A1_WIRE, CACHE_SET_SIZE);
@@ -85,7 +95,7 @@ module Cache (
     if (found_line == -1) begin
       $display("Line not found");
       fork
-        #1 C1 = C1_NOP;
+        #1 C1 = C1_NOP;  // Второй поток всегда закончиться позже
         begin // Надо пойти в Mem и прочитать строчку, сохранить её
           #(CACHE_MISS_DELAY * 2);
           // TODO
@@ -94,33 +104,26 @@ module Cache (
     end else begin
       $display("Found line #%0d, dirty = %d", found_line, valid_dirty[set][found_line][0]);
       fork
-        #1 C1 = C1_NOP;
+        begin
+          #1; C1 = C1_NOP; #1;  // Второй поток может закончиться раньше
+        end
         #(CACHE_HIT_DELAY * 2);
       join
     end
 
     // Оправляем данные в CPU, помня про little-endian, то есть сначала идёт третий байт, потом второй, потом первый
     C1 = C1_RESPONSE;
-
     case (read_bits)
-      8: begin
-        D2[7:0] = data[set][found_line][offset];
-      end
-      16: begin
-        D2[15:8] = data[set][found_line][offset + 1];
-        D2[7:0] = data[set][found_line][offset];
-      end
+      8: send_bytes(D1, data[set][found_line][offset], 0);
+      16: send_bytes(D1, data[set][found_line][offset], data[set][found_line][offset + 1]);
       32: begin
-        D2[15:8] = data[set][found_line][offset + 1];
-        D2[7:0] = data[set][found_line][offset];
+        send_bytes(D1, data[set][found_line][offset], data[set][found_line][offset + 1]);
         #2;
-        D2[15:8] = data[set][found_line][offset + 3];
-        D2[7:0] = data[set][found_line][offset + 2];
+        send_bytes(D1, data[set][found_line][offset + 2], data[set][found_line][offset + 3]);
       end
     endcase
 
-    // На последнем такте работы отправляем C1_RESPONSE и, когда CLK -> 0, закрываем соединения
-    C1 = C1_RESPONSE;
+    // Когда CLK -> 0, закрываем соединения
     #1; `close_bus1; listening_bus1 = 1;
   endtask
 
@@ -160,21 +163,18 @@ module Cache (
           // Если линия Dirty, то нужно сдампить содержимое в Mem
           if (valid_dirty[set][found_line][0]) begin
             fork
-              #1 C1 = C1_NOP;
+              #1 C1 = C1_NOP;  // Второй поток всегда закончиться позже
               begin  // Отправка данных в Mem
                 C2 = C2_WRITE_LINE;
                 mem_address = tag;
                 mem_address = (mem_address << CACHE_SET_SIZE) + set;
                 A2 = mem_address;
 
-                for (int bbyte = 0; bbyte < CACHE_LINE_SIZE; ++bbyte)  // Debug
-                  $display("Sending byte: %d = %b", data[set][found_line][bbyte], data[set][found_line][bbyte]);
+                // for (int bbyte = 0; bbyte < CACHE_LINE_SIZE; ++bbyte)  // Debug
+                //   $display("Sending byte: %d = %b", data[set][found_line][bbyte], data[set][found_line][bbyte]);
+
                 for (int bbytes_start = 0; bbytes_start < CACHE_LINE_SIZE; bbytes_start += 2) begin
-                  // Передать данные в little-endian, то есть вначале (слева) идёт второй байт ([15:8]), потом (справа) первый ([7:0])
-                  // Тогда D1 = (второй байт, первый байт) -> второй байт = D2[15:8], первый байт = D2[7:0]
-                  D2[7:0] = data[set][found_line][bbytes_start];
-                  D2[15:8] = data[set][found_line][bbytes_start + 1];
-                  $display("[%3t | CLK=%0d] D2 <- %b", $time, $time % 2, D2);
+                  send_bytes(D2, data[set][found_line][bbytes_start], data[set][found_line][bbytes_start + 1]);
                   if (bbytes_start + 2 < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
                 end
 
