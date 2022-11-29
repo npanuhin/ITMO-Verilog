@@ -36,17 +36,29 @@ module MemCTR (
 
       C2_READ_LINE: begin
         $display("[%3t | CLK=%0d] MemCTR: C2_READ_LINE", $time, $time % 2);
+        // listening_bus2 = 0;
         // TODO
       end
 
       C2_WRITE_LINE: begin
         $display("[%3t | CLK=%0d] MemCTR: C2_WRITE_LINE, A2 = %b", $time, $time % 2, A2_WIRE);
+        listening_bus2 = 0;
         address = A2_WIRE;
         accum_delay = 0;
 
+        // Чтение окончено, приступаем к выполнению:
+        fork
+          #1 C2 = C2_NOP;
+          begin
+            // TODO
+          end
+        join
+
         #(MEM_CTR_DELAY * 2 - accum_delay);
 
-        // TODO
+        // На последнем такте работы отправляем C2_RESPONSE и когда CLK -> 0, закрываем соединения
+        C2 = C2_RESPONSE;
+        #1 `close_bus2; listening_bus2 = 1;
       end
     endcase
   end

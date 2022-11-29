@@ -76,20 +76,20 @@ module Cache (
         #2 offset = A1_WIRE % CACHE_OFFSET_SIZE;
         $display("[%3t | CLK=%0d] tag = %b, set = %b, offset = %b", $time, $time % 2, tag, set, offset);
 
-        // Чтение команды окончено, приступаем к выполнению:
-        fork
-          #1 C1 = C1_NOP;
-          begin
-            // Найти в set-е линию с нужным tag
-            found_line = -1;
-            for (int cur_line = 0; cur_line < CACHE_WAY; ++cur_line)
-              if (tags[set][cur_line] == tag) found_line = cur_line;
+        // Чтение окончено, приступаем к выполнению:
+        // Найти в set-е линию с нужным tag
+        found_line = -1;
+        for (int cur_line = 0; cur_line < CACHE_WAY; ++cur_line)
+          if (tags[set][cur_line] == tag) found_line = cur_line;
 
-            if (found_line == -1) $display("Line not found");
-            else begin
-              // Если линия Dirty, то нужно сдампить содержимое в Mem
-              $display("Found line #%0d, dirty = %d", found_line, valid_dirty[set][found_line][0]);
-              if (valid_dirty[set][found_line][0]) begin
+        if (found_line == -1) $display("Line not found");
+        else begin
+          $display("Found line #%0d, dirty = %d", found_line, valid_dirty[set][found_line][0]);
+          // Если линия Dirty, то нужно сдампить содержимое в Mem
+          if (valid_dirty[set][found_line][0]) begin
+            fork
+              #1 C1 = C1_NOP;
+              begin  // Отправка данных в Mem
                 C2 = C2_WRITE_LINE;
                 mem_address = tag;
                 mem_address = (mem_address << CACHE_SET_SIZE) + set;
@@ -122,17 +122,15 @@ module Cache (
                   if (bbytes_start + DATA2_BUS_SIZE_BYTES < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
                 end
               end
-              reset_line(set, found_line);  // В конце очистить линию
+            join
 
-              // На последнем такте передачи данных отправляем также C1_RESPONSE
-              C1 = C1_RESPONSE;
-            end
-            #1 begin  // Закрываем все соединиения, когда CLK -> 0
-              `close_bus1; `close_bus2;
-              listening_bus1 = 0;
-            end
+            reset_line(set, found_line);  // В конце очистить линию
           end
-        join
+        end
+
+        // На последнем такте работы отправляем C1_RESPONSE и когда CLK -> 0, закрываем соединения
+        C1 = C1_RESPONSE;
+        #1; `close_bus1; `close_bus2; listening_bus1 = 1;
       end
 
       // TODO: Other commands
