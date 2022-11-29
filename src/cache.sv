@@ -107,9 +107,9 @@ module Cache (
                 mem_address = tag;
                 mem_address = (mem_address << CACHE_SET_SIZE) + set;
                 A2 = mem_address;
-                // for (int bbyte = 0; bbyte < CACHE_LINE_SIZE; ++bbyte)  // Debug
-                //   $display("Sending byte: %d = %b", data[set][found_line][bbyte], data[set][found_line][bbyte]);
-                for (int bbytes_start = 0; bbytes_start < CACHE_LINE_SIZE; bbytes_start += DATA2_BUS_SIZE_BYTES) begin  // DATA2_BUS_SIZE - ширина шины в байтах
+                for (int bbyte = 0; bbyte < CACHE_LINE_SIZE; ++bbyte)  // Debug
+                  $display("Sending byte: %d = %b", data[set][found_line][bbyte], data[set][found_line][bbyte]);
+                for (int bbytes_start = 0; bbytes_start < CACHE_LINE_SIZE; bbytes_start += DATA2_BUS_SIZE_BYTES) begin
                   for (int bbyte = 0; bbyte < DATA2_BUS_SIZE_BYTES; ++bbyte) begin
                     // Передать данные в little-endian, то есть {пример для двух байт} вначале (слева) идёт второй байт ([15:8]), потом (справа) первый ([7:0])
                     // Тогда D1 = (второй байт, первый байт) -> второй байт = D2[15:8], первый байт = D2[7:0]
@@ -121,19 +121,22 @@ module Cache (
                     // 1 + 1 -> [15:8]
                     // 2 + 0 -> [7:0]
                     // 2 + 1 -> [15:8]
-                    // Пусть start = (DATA2_BUS_SIZE_BYTES - 1 - byte) * 8
-                    tmp_start = bbyte * 8;
-                    // Тогда: байт [bbytes_start + bbyte] нужно записать в D2[start+7:start]
+                    // Тогда: байт [bbytes_start + bbyte] нужно записать в D2[bbyte * 8 + 7:bbyte * 8]
                     // Пример: отправялем два байта reg byte1 = 236 (11101100); reg byte2 = 122 (01111010)
                     // Тогда отправится reg D2 = 01111010|11101100 - конкатенация двух байтов
                     for (int i = 0; i < 8; ++i) begin
-                      // $display("D2[%2d] = data[%0d][%0d][%0d + %0d][%0d] = %b", tmp_start + i, set, found_line, bbytes_start, bbyte, i, data[set][found_line][bbytes_start + bbyte][i]);
-                      D2[tmp_start + i] = data[set][found_line][bbytes_start + bbyte][i];
+                      // $display("D2[%2d] = data[%0d][%0d][%0d + %0d][%0d] = %b", bbyte * 8 + i, set, found_line, bbytes_start, bbyte, i, data[set][found_line][bbytes_start + bbyte][i]);
+                      D2[bbyte * 8 + i] = data[set][found_line][bbytes_start + bbyte][i];
                     end
                   end
                   $display("[%3t | CLK=%0d] D2 <- %b", $time, $time % 2, D2);
                   if (bbytes_start + DATA2_BUS_SIZE_BYTES < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
                 end
+
+                #1;
+                `close_bus2;
+                wait(C2_WIRE == C2_RESPONSE);
+                $display("[%3t | CLK=%0d] Cache received C2_RESPONSE", $time, $time % 2);
               end
             join
 

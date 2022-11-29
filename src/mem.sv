@@ -43,16 +43,25 @@ module MemCTR (
       C2_WRITE_LINE: begin
         $display("[%3t | CLK=%0d] MemCTR: C2_WRITE_LINE, A2 = %b", $time, $time % 2, A2_WIRE);
         listening_bus2 = 0;
-        address = A2_WIRE;
+        address = A2_WIRE << CACHE_OFFSET_SIZE;
         accum_delay = 0;
 
-        // Чтение окончено, приступаем к выполнению:
-        fork
-          #1 C2 = C2_NOP;
-          begin
-            // TODO
+        // Делаем операцию, обратную той, что описана в cache.sv
+        for (int bbytes_start = 0; bbytes_start < CACHE_LINE_SIZE; bbytes_start += DATA2_BUS_SIZE_BYTES) begin
+          for (int bbyte = 0; bbyte < DATA2_BUS_SIZE_BYTES; ++bbyte) begin
+            for (int i = 0; i < 8; ++i) ram[address][i] = D2_WIRE[bbyte * 8 + i];
+            $display("Wrote byte %d = %b to ram[%b]", ram[address], ram[address], address);
+            ++address;
           end
-        join
+          if (bbytes_start + DATA2_BUS_SIZE_BYTES < CACHE_LINE_SIZE) begin  // Ждать надо везде, кроме последней передачи данных
+            #2; accum_delay += 2;
+          end
+        end
+
+        // Чтение окончено, приступаем к выполнению (запись в память параллельно уже была, так что больше нечего выполнять, ну и ладно):
+        if (MEM_CTR_DELAY * 2 - accum_delay > 1) begin
+          #1 C2 = C2_NOP; --accum_delay;
+        end
 
         #(MEM_CTR_DELAY * 2 - accum_delay);
 
