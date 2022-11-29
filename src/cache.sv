@@ -24,7 +24,7 @@ module Cache (
       data[cur_set][cur_line][bbyte] = $random(SEED) >> 16;  // For testing, should be 'x
   endtask
 
-  task reset();
+  task reset;
     for (int cur_set = 0; cur_set < CACHE_SETS_COUNT; ++cur_set)
       for (int cur_line = 0; cur_line < CACHE_WAY; ++cur_line)
         reset_line(cur_set, cur_line);
@@ -77,14 +77,14 @@ module Cache (
     bbyte2 = D2_WIRE[15:8]; bbyte1 = D2_WIRE[7:0];
   endtask
 
-  task format_A2();
+  task format_A2;
     A2[CACHE_TAG_SIZE+CACHE_SET_SIZE-1:CACHE_SET_SIZE] = tag;
     A2[CACHE_SET_SIZE-1:0] = set;
   endtask
 
   // Parses A1, duration: 2 tacts
   // Result: filled tag, set, offset and found_line
-  task parse_A1();
+  task parse_A1;
     tag = `discard_last_n_bits(A1_WIRE, CACHE_SET_SIZE);
     set = `last_n_bits(A1_WIRE, CACHE_SET_SIZE);
     #2 offset = A1_WIRE;

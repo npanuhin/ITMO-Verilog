@@ -56,7 +56,7 @@ module test;
     $display("[%3t | CLK=%0d] CPU: Sending byte: %d = %b", $time, $time % 2, bbyte2, bbyte2);
     D1[15:8] = bbyte2; D1[7:0] = bbyte1;
   endtask
-  task receive_bytes_D1();
+  task receive_bytes_D1;
     $display("[%3t | CLK=%0d] CPU: Received byte: %d = %b", $time, $time % 2, D1_WIRE[7:0], D1_WIRE[7:0]);
     $display("[%3t | CLK=%0d] CPU: Received byte: %d = %b", $time, $time % 2, D1_WIRE[15:8], D1_WIRE[15:8]);
   endtask
