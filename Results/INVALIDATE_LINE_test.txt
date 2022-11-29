@@ -1,68 +1,68 @@
-Testbench: sending C1_INVALIDATE_LINE, A1 = 00000000000000000000000010000010
+Testbench: sending C1_INVALIDATE_LINE, A1 = 0000000000|00010|0000011
 
 [  1 | CLK=1] <Sending C1 and first half of A1>
 [  1 | CLK=1] C1_WIRE = 4, C2_WIRE = z
-[  1 | CLK=1] Cache: C1_INVALIDATE_LINE, A1 = 000000000000001
+[  1 | CLK=1] Cache: C1_INVALIDATE_LINE, A1 = 000000000000010
 [  2 | CLK=0] C1_WIRE = 4, C2_WIRE = z
 [  3 | CLK=1] <Sending second half of A1>
-[  3 | CLK=1] tag = 0000000000, set = 00001, offset = 0000010
+[  3 | CLK=1] tag = 0000000000, set = 00010, offset = 0000011
 Found line #1, dirty = 1
-Sending byte: 102 = 01100110
-Sending byte: 150 = 10010110
-Sending byte: 153 = 10011001
-Sending byte:  65 = 01000001
-Sending byte:  74 = 01001010
-Sending byte: 188 = 10111100
-Sending byte: 158 = 10011110
-Sending byte:  26 = 00011010
-Sending byte: 234 = 11101010
-Sending byte:  49 = 00110001
-Sending byte: 123 = 01111011
-Sending byte:  27 = 00011011
-Sending byte: 144 = 10010000
-Sending byte: 103 = 01100111
-Sending byte: 224 = 11100000
-Sending byte:  93 = 01011101
-[  3 | CLK=1] D2 <- 1001011001100110
+Sending byte: 211 = 11010011
+Sending byte: 125 = 01111101
+Sending byte: 207 = 11001111
+Sending byte:  99 = 01100011
+Sending byte: 214 = 11010110
+Sending byte:  80 = 01010000
+Sending byte:  85 = 01010101
+Sending byte:  64 = 01000000
+Sending byte:  13 = 00001101
+Sending byte: 145 = 10010001
+Sending byte: 115 = 01110011
+Sending byte: 216 = 11011000
+Sending byte: 185 = 10111001
+Sending byte: 226 = 11100010
+Sending byte: 226 = 11100010
+Sending byte:  70 = 01000110
+[  3 | CLK=1] D2 <- 0111110111010011
 [  3 | CLK=1] C1_WIRE = 4, C2_WIRE = 3
-[  3 | CLK=1] MemCTR: C2_WRITE_LINE, A2 = 000000000000001
-[  3 | CLK=1] Wrote byte 102 = 01100110 to ram[0000000000000010000000]
-[  3 | CLK=1] Wrote byte 150 = 10010110 to ram[0000000000000010000001]
+[  3 | CLK=1] MemCTR: C2_WRITE_LINE, A2 = 000000000000010
+[  3 | CLK=1] Wrote byte 211 = 11010011 to ram[0000000000000100000000]
+[  3 | CLK=1] Wrote byte 125 = 01111101 to ram[0000000000000100000001]
 [  4 | CLK=0] <Finished sending>
 [  4 | CLK=0] C1_WIRE = 0, C2_WIRE = 3
-[  5 | CLK=1] D2 <- 0100000110011001
-[  5 | CLK=1] Wrote byte 153 = 10011001 to ram[0000000000000010000010]
-[  5 | CLK=1] Wrote byte  65 = 01000001 to ram[0000000000000010000011]
+[  5 | CLK=1] D2 <- 0110001111001111
+[  5 | CLK=1] Wrote byte 207 = 11001111 to ram[0000000000000100000010]
+[  5 | CLK=1] Wrote byte  99 = 01100011 to ram[0000000000000100000011]
 [  5 | CLK=1] C1_WIRE = 0, C2_WIRE = 3
 [  6 | CLK=0] C1_WIRE = 0, C2_WIRE = 3
-[  7 | CLK=1] D2 <- 1011110001001010
-[  7 | CLK=1] Wrote byte  74 = 01001010 to ram[0000000000000010000100]
-[  7 | CLK=1] Wrote byte 188 = 10111100 to ram[0000000000000010000101]
+[  7 | CLK=1] D2 <- 0101000011010110
+[  7 | CLK=1] Wrote byte 214 = 11010110 to ram[0000000000000100000100]
+[  7 | CLK=1] Wrote byte  80 = 01010000 to ram[0000000000000100000101]
 [  7 | CLK=1] C1_WIRE = 0, C2_WIRE = 3
 [  8 | CLK=0] C1_WIRE = 0, C2_WIRE = 3
-[  9 | CLK=1] D2 <- 0001101010011110
-[  9 | CLK=1] Wrote byte 158 = 10011110 to ram[0000000000000010000110]
-[  9 | CLK=1] Wrote byte  26 = 00011010 to ram[0000000000000010000111]
+[  9 | CLK=1] D2 <- 0100000001010101
+[  9 | CLK=1] Wrote byte  85 = 01010101 to ram[0000000000000100000110]
+[  9 | CLK=1] Wrote byte  64 = 01000000 to ram[0000000000000100000111]
 [  9 | CLK=1] C1_WIRE = 0, C2_WIRE = 3
 [ 10 | CLK=0] C1_WIRE = 0, C2_WIRE = 3
-[ 11 | CLK=1] D2 <- 0011000111101010
-[ 11 | CLK=1] Wrote byte 234 = 11101010 to ram[0000000000000010001000]
-[ 11 | CLK=1] Wrote byte  49 = 00110001 to ram[0000000000000010001001]
+[ 11 | CLK=1] D2 <- 1001000100001101
+[ 11 | CLK=1] Wrote byte  13 = 00001101 to ram[0000000000000100001000]
+[ 11 | CLK=1] Wrote byte 145 = 10010001 to ram[0000000000000100001001]
 [ 11 | CLK=1] C1_WIRE = 0, C2_WIRE = 3
 [ 12 | CLK=0] C1_WIRE = 0, C2_WIRE = 3
-[ 13 | CLK=1] D2 <- 0001101101111011
-[ 13 | CLK=1] Wrote byte 123 = 01111011 to ram[0000000000000010001010]
-[ 13 | CLK=1] Wrote byte  27 = 00011011 to ram[0000000000000010001011]
+[ 13 | CLK=1] D2 <- 1101100001110011
+[ 13 | CLK=1] Wrote byte 115 = 01110011 to ram[0000000000000100001010]
+[ 13 | CLK=1] Wrote byte 216 = 11011000 to ram[0000000000000100001011]
 [ 13 | CLK=1] C1_WIRE = 0, C2_WIRE = 3
 [ 14 | CLK=0] C1_WIRE = 0, C2_WIRE = 3
-[ 15 | CLK=1] D2 <- 0110011110010000
-[ 15 | CLK=1] Wrote byte 144 = 10010000 to ram[0000000000000010001100]
-[ 15 | CLK=1] Wrote byte 103 = 01100111 to ram[0000000000000010001101]
+[ 15 | CLK=1] D2 <- 1110001010111001
+[ 15 | CLK=1] Wrote byte 185 = 10111001 to ram[0000000000000100001100]
+[ 15 | CLK=1] Wrote byte 226 = 11100010 to ram[0000000000000100001101]
 [ 15 | CLK=1] C1_WIRE = 0, C2_WIRE = 3
 [ 16 | CLK=0] C1_WIRE = 0, C2_WIRE = 3
-[ 17 | CLK=1] D2 <- 0101110111100000
-[ 17 | CLK=1] Wrote byte 224 = 11100000 to ram[0000000000000010001110]
-[ 17 | CLK=1] Wrote byte  93 = 01011101 to ram[0000000000000010001111]
+[ 17 | CLK=1] D2 <- 0100011011100010
+[ 17 | CLK=1] Wrote byte 226 = 11100010 to ram[0000000000000100001110]
+[ 17 | CLK=1] Wrote byte  70 = 01000110 to ram[0000000000000100001111]
 [ 17 | CLK=1] C1_WIRE = 0, C2_WIRE = 3
 [ 18 | CLK=0] C1_WIRE = 0, C2_WIRE = 0
 [ 19 | CLK=1] C1_WIRE = 0, C2_WIRE = 0
@@ -262,4 +262,4 @@ Sending byte:  93 = 01011101
 [210 | CLK=0] C1_WIRE = z, C2_WIRE = z
 [211 | CLK=1] C1_WIRE = z, C2_WIRE = z
 [212 | CLK=0] C1_WIRE = z, C2_WIRE = z
-testbench.sv:71: $finish called at 213 (1s)
+testbench.sv:86: $finish called at 213 (1s)

@@ -26,7 +26,7 @@ module Cache (
   task reset();
     for (int cur_set = 0; cur_set < CACHE_SETS_COUNT; ++cur_set)
       for (int cur_line = 0; cur_line < CACHE_WAY; ++cur_line)
-        reset_line(cur_line, cur_line);
+        reset_line(cur_set, cur_line);
   endtask
 
   reg[CACHE_TAG_SIZE-1:0] tag;
@@ -84,9 +84,10 @@ module Cache (
       C1_INVALIDATE_LINE: begin
         $display("[%3t | CLK=%0d] Cache: C1_INVALIDATE_LINE, A1 = %b", $time, $time % 2, A1_WIRE);
         listening_bus1 = 0;
-        tag = A1_WIRE >> CACHE_SET_SIZE;
-        set = A1_WIRE % CACHE_SET_SIZE;
-        #2 offset = A1_WIRE % CACHE_OFFSET_SIZE;
+        tag = `discard_last_n_bits(A1_WIRE, CACHE_SET_SIZE);
+        set = `last_n_bits(A1_WIRE, CACHE_SET_SIZE);
+        #2;
+        offset = A1_WIRE;
         $display("[%3t | CLK=%0d] tag = %b, set = %b, offset = %b", $time, $time % 2, tag, set, offset);
 
         // Чтение окончено, приступаем к выполнению:

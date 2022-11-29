@@ -1,6 +1,11 @@
 `include "src/parameters.sv"
 `include "src/commands.sv"
 
+// Tools
+`define discard_last_n_bits(register, n) (register >> n)
+`define first_n_bits(register, n) `discard_last_n_bits(register, $size(register) - n)
+`define last_n_bits(register, n) (register & ((1 << n) - 1))
+
 // BUSes
 `define map_bus1 \
   reg[ADDR1_BUS_SIZE-1:0] A1 = 'z; assign A1_WIRE = A1; \
@@ -40,28 +45,38 @@ module test;
   Cache Cache_instance(CLK, A1_WIRE, D1_WIRE, C1_WIRE, A2_WIRE, D2_WIRE, C2_WIRE, RESET, C_DUMP);
   MemCTR Mem_instance(CLK, A2_WIRE, D2_WIRE, C2_WIRE, RESET, M_DUMP);
 
+  // For testing
+  reg[CACHE_TAG_SIZE-1:0] tag;
+  reg[CACHE_SET_SIZE-1:0] set;
+  reg[CACHE_OFFSET_SIZE-1:0] offset;
+  reg[CACHE_ADDR_SIZE-1:0] address;
+
   initial begin
     // $dumpfile("dump.vcd"); $dumpvars;
     // ----------------------------------------------------- Logic -----------------------------------------------------
     // $monitor("[%3t] CLK = %d, C1_WIRE = %d", $time, CLK, C1_WIRE);
-    $display("Testbench: sending C1_INVALIDATE_LINE, A1 = %22b\n", (1 << CACHE_OFFSET_SIZE) + 2);
+    tag = 0;
+    set = 2;
+    offset = 3;
+    address = tag;
+    address = (((address << CACHE_SET_SIZE) + set) << CACHE_OFFSET_SIZE) + offset;
+    $display("Testbench: sending C1_INVALIDATE_LINE, A1 = %b|%b|%b\n", tag, set, offset);
 
     #1; // CLK -> 1
     // Передача команды и первой части адреса
     $display("[%3t | CLK=%0d] <Sending C1 and first half of A1>", $time, $time % 2);
     C1 = C1_INVALIDATE_LINE;
-    A1 = 1;
+    A1 = `discard_last_n_bits(address, CACHE_OFFSET_SIZE);
     #2
     // Передача второй части адреса
     $display("[%3t | CLK=%0d] <Sending second half of A1>", $time, $time % 2);
-    A1 = 2;
+    A1 = `last_n_bits(address, CACHE_OFFSET_SIZE);
     #1
     // Завершение взаимодействия
     $display("[%3t | CLK=%0d] <Finished sending>", $time, $time % 2);
     `close_bus1;
 
     wait(C1_WIRE == C1_RESPONSE);
-
     $display("[%3t | CLK=%0d] CPU received C1_RESPONSE", $time, $time % 2);
 
     // DUMP everything and finish
