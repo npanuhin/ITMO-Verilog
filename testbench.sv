@@ -53,19 +53,43 @@ module test;
 
   initial begin
     // $dumpfile("dump.vcd"); $dumpvars;
-    // ----------------------------------------------------- Logic -----------------------------------------------------
-    // $monitor("[%3t] CLK = %d, C1_WIRE = %d", $time, CLK, C1_WIRE);
+    // -------------------------------------------- Test C1_INVALIDATE_LINE --------------------------------------------
+    // tag = 0;
+    // set = 2;
+    // offset = 3;
+    // address = tag;
+    // address = (((address << CACHE_SET_SIZE) + set) << CACHE_OFFSET_SIZE) + offset;
+    // $display("Testbench: sending C1_INVALIDATE_LINE, A1 = %b|%b|%b\n", tag, set, offset);
+
+    // #1; // CLK -> 1
+    // // Передача команды и первой части адреса
+    // $display("[%3t | CLK=%0d] <Sending C1 and first half of A1>", $time, $time % 2);
+    // C1 = C1_INVALIDATE_LINE;
+    // A1 = `discard_last_n_bits(address, CACHE_OFFSET_SIZE);
+    // #2
+    // // Передача второй части адреса
+    // $display("[%3t | CLK=%0d] <Sending second half of A1>", $time, $time % 2);
+    // A1 = `last_n_bits(address, CACHE_OFFSET_SIZE);
+    // #1
+    // // Завершение взаимодействия
+    // $display("[%3t | CLK=%0d] <Finished sending>", $time, $time % 2);
+    // `close_bus1;
+
+    // wait(C1_WIRE == C1_RESPONSE);
+    // $display("[%3t | CLK=%0d] CPU received C1_RESPONSE", $time, $time % 2);
+
+    // ---------------------------------------------- Test C1_READ8/16/32 ----------------------------------------------
     tag = 0;
     set = 2;
     offset = 3;
     address = tag;
     address = (((address << CACHE_SET_SIZE) + set) << CACHE_OFFSET_SIZE) + offset;
-    $display("Testbench: sending C1_INVALIDATE_LINE, A1 = %b|%b|%b\n", tag, set, offset);
+    $display("Testbench: sending C1_READ32, A1 = %b|%b|%b\n", tag, set, offset);
 
     #1; // CLK -> 1
     // Передача команды и первой части адреса
     $display("[%3t | CLK=%0d] <Sending C1 and first half of A1>", $time, $time % 2);
-    C1 = C1_INVALIDATE_LINE;
+    C1 = C1_READ32;
     A1 = `discard_last_n_bits(address, CACHE_OFFSET_SIZE);
     #2
     // Передача второй части адреса
@@ -76,9 +100,10 @@ module test;
     $display("[%3t | CLK=%0d] <Finished sending>", $time, $time % 2);
     `close_bus1;
 
-    wait(C1_WIRE == C1_RESPONSE);
-    $display("[%3t | CLK=%0d] CPU received C1_RESPONSE", $time, $time % 2);
+    // wait(C1_WIRE == C1_RESPONSE);
+    // $display("[%3t | CLK=%0d] CPU received C1_RESPONSE", $time, $time % 2);
 
+    // -----------------------------------------------------------------------------------------------------------------
     // DUMP everything and finish
     // #3;
     // C_DUMP = 1;

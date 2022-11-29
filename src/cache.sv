@@ -32,13 +32,12 @@ module Cache (
   reg[CACHE_TAG_SIZE-1:0] tag;
   reg[CACHE_SET_SIZE-1:0] set;
   reg[CACHE_OFFSET_SIZE-1:0] offset;
-
   reg[CACHE_TAG_SIZE + CACHE_SET_SIZE - 1:0] mem_address;
   // reg[DATA2_BUS_SIZE-1:0] bus2_data;
 
   bit listening_bus1 = 1, listening_bus2 = 0;
 
-  int found_line, tmp_start;
+  int found_line;
 
   // Initialization & RESET
   initial reset();

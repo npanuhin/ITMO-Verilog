@@ -17,7 +17,7 @@ module MemCTR (
 
   // Initialization & RESET
   task intialize_ram();
-    // for (int i = 0; i < MEM_SIZE; ++i) ram[i] = $random(SEED) >> 16;
+    for (int i = 0; i < 10000; ++i) ram[i] = $random(SEED) >> 16;   // 10000 for testing, should be MEM_SIZE
   endtask
   always @(RESET) intialize_ram();
   initial begin
@@ -28,6 +28,11 @@ module MemCTR (
     // end
     // $display();
   end
+
+  // Dumping
+  always @(posedge M_DUMP)
+    for (int cur_byte = 0; cur_byte < 100; ++cur_byte)  // 100 for testing, should be MEM_SIZE
+      $display("Byte %2d: %d = %b", cur_byte, ram[cur_byte], ram[cur_byte]);
 
   // Main logic
   always @(posedge CLK) begin
