@@ -91,7 +91,7 @@ module Cache (
       if (valid[req_set][test_line] == 1 && tags[req_set][test_line] == req_tag) found_line = test_line;
   endtask
 
-  task invalidate_line(input [CACHE_SET_SIZE-1:0] set, input int line);  // duration: UNDEFINED! tacts
+  task invalidate_line(input [CACHE_SET_SIZE-1:0] set, input int line);  // duration: UNDEFINED! tacts, called on CLK = 0
     $display("Invalidating line: set = %b, line = %0d | D: %0d", set, line, dirty[set][line]);
     // Если линия Dirty, то нужно сдампить её содержимое в Mem
     if (dirty[set][line]) begin
@@ -110,9 +110,8 @@ module Cache (
             if (bbytes_start + 2 < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
           end
 
-          #1;
-          `close_bus2;
-          wait(C2_WIRE == C2_RESPONSE);
+          #1 `close_bus2;
+          wait(CLK == 1 && C2_WIRE == C2_RESPONSE);
           $display("[%3t | CLK=%0d] Cache received C2_RESPONSE", $time, $time % 2);
         end
       join
@@ -140,51 +139,41 @@ module Cache (
     listening_bus1 = 0; parse_A1();
 
     if (found_line == -1) begin
-      $display("Line not found, reading from Mem");
-      fork
-        begin
-          #1; C1 = C1_NOP; #1;
-        end
-        begin // Надо найти свободную линию, пойти в Mem, прочитать строчку и сохранить её
-          #CACHE_MISS_DELAY;
+      $display("Line not found, finding spare one");
+      // Надо найти свободную линию, пойти в Mem, прочитать строчку и сохранить её
+      #1 C1 = C1_NOP;
+      #(CACHE_MISS_DELAY - 4);
 
-          find_spare_line();
-          tags[req_set][found_line] = req_tag;
+      find_spare_line();
+      tags[req_set][found_line] = req_tag;
 
-          #2;  // Надо подождать 1 такт, так как на текущем такте MemCTR ещё только послал RESPONSE, владение к нам перейдёт через пол такта
-          C2 = C2_READ_LINE; redirect_address();
-          #1 `close_bus2;  // Когда CLK -> 0, закрываем соединение
-          wait(C2_WIRE == C2_RESPONSE);
-          $display("[%3t | CLK=%0d] Cache received C2_RESPONSE", $time, $time % 2);
+      #1 C2 = C2_READ_LINE; redirect_address();
+      #2 `close_bus2;  // Когда CLK -> 0, закрываем соединение
+      wait(CLK == 1 && C2_WIRE == C2_RESPONSE);
+      $display("[%3t | CLK=%0d] Cache received C2_RESPONSE", $time, $time % 2);
 
-          for (int bbytes_start = 0; bbytes_start < CACHE_LINE_SIZE; bbytes_start += 2) begin
-            receive_bytes_D2(data[req_set][found_line][bbytes_start], data[req_set][found_line][bbytes_start + 1]);
-            $display(
-              "[%3t | CLK=%0d] Cache: Wrote byte %d = %b to data[%0d][%0d][%0d]", $time, $time % 2,
-              data[req_set][found_line][bbytes_start], data[req_set][found_line][bbytes_start], req_set, found_line, bbytes_start
-            );
-            $display(
-              "[%3t | CLK=%0d] Cache: Wrote byte %d = %b to data[%0d][%0d][%0d]", $time, $time % 2,
-              data[req_set][found_line][bbytes_start + 1], data[req_set][found_line][bbytes_start + 1], req_set, found_line, bbytes_start + 1
-            );
-            if (bbytes_start + 2 < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
-          end
-        end
-      join
+      for (int bbytes_start = 0; bbytes_start < CACHE_LINE_SIZE; bbytes_start += 2) begin
+        receive_bytes_D2(data[req_set][found_line][bbytes_start], data[req_set][found_line][bbytes_start + 1]);
+        $display(
+          "[%3t | CLK=%0d] Cache: Wrote byte %d = %b to data[%0d][%0d][%0d]", $time, $time % 2,
+          data[req_set][found_line][bbytes_start], data[req_set][found_line][bbytes_start], req_set, found_line, bbytes_start
+        );
+        $display(
+          "[%3t | CLK=%0d] Cache: Wrote byte %d = %b to data[%0d][%0d][%0d]", $time, $time % 2,
+          data[req_set][found_line][bbytes_start + 1], data[req_set][found_line][bbytes_start + 1], req_set, found_line, bbytes_start + 1
+        );
+        if (bbytes_start + 2 < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
+      end
     end else begin
       $display("Found line #%0d", found_line);
-      fork
-        begin
-          #1; C1 = C1_NOP; #1;
-        end
-        #CACHE_HIT_DELAY;
-      join
+      #1 C1 = C1_NOP;
+      #(CACHE_HIT_DELAY - 5);
     end
 
     LRU_bit[req_set][found_line] = 1;
     LRU_bit[req_set][!found_line] = 0;
 
-    C1 = C1_RESPONSE;
+    #1 C1 = C1_RESPONSE;
     case (read_bits)
       8: send_bytes_D1(data[req_set][found_line][req_offset], 0);
       16: send_bytes_D1(data[req_set][found_line][req_offset], data[req_set][found_line][req_offset + 1]);
@@ -193,7 +182,7 @@ module Cache (
         #2 send_bytes_D1(data[req_set][found_line][req_offset + 2], data[req_set][found_line][req_offset + 3]);
       end
     endcase
-    #1 `close_bus1; listening_bus1 = 1;  // Когда CLK -> 0, закрываем соединение
+    #2 `close_bus1; listening_bus1 = 1;  // Когда CLK -> 0, закрываем соединение
   endtask
 
   task handle_c1_write(int write_bits);
@@ -217,18 +206,19 @@ module Cache (
       C1_INVALIDATE_LINE: begin
         $display("[%3t | CLK=%0d] Cache: C1_INVALIDATE_LINE, A1 = %b", $time, $time % 2, A1_WIRE);
         listening_bus1 = 0; parse_A1();
+        #1 C1 = C1_NOP;
 
         if (found_line == -1) begin
           $display("Line not found");
-          #1; C1 = C1_NOP; #1;
-          #CACHE_HIT_DELAY;  // Для реалистичности
+          #(CACHE_HIT_DELAY - 5);  // Для реалистичности поставим задежку между C1_INVALIDATE_LINE и отправкой данных/C1_RESPONSE равную CACHE_HIT_DELAY тактов
         end else begin
           $display("Found line #%0d", found_line);
           invalidate_line(req_set, found_line);
         end
 
-        C1 = C1_RESPONSE;
-        #1 `close_bus1; listening_bus1 = 1;  // Когда CLK -> 0, закрываем соединение
+        #1 C1 = C1_RESPONSE;
+        $display("[%3t | CLK=%0d] Cache: Sending C1_RESPONSE", $time, $time % 2);
+        #2 `close_bus1; listening_bus1 = 1;  // Когда CLK -> 0, закрываем соединение
       end
     endcase
   end

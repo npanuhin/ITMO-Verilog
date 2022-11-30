@@ -1,63 +1,63 @@
 Testbench: sending C1_INVALIDATE_LINE, A1 = 0000000000|00010|0000011
 
-[  1 | CLK=1] <Sending C1 and first half of A1>
+[  0 | CLK=0] <Sending C1 and first half of A1>
 [  1 | CLK=1] C1_WIRE = 4, C2_WIRE = z
 [  1 | CLK=1] Cache: C1_INVALIDATE_LINE, A1 = 000000000000010
+[  2 | CLK=0] <Sending second half of A1>
 [  2 | CLK=0] C1_WIRE = 4, C2_WIRE = z
-[  3 | CLK=1] <Sending second half of A1>
 [  3 | CLK=1] tag = 0000000000, set = 00010, offset = 0000011
+[  3 | CLK=1] C1_WIRE = 4, C2_WIRE = z
+[  4 | CLK=0] <Finished sending>
 Found line #1
 Invalidating line: set = 00010, line = 1 | D: 1
-[  3 | CLK=1] Cache: Sending byte: 211 = 11010011
-[  3 | CLK=1] Cache: Sending byte: 125 = 01111101
-[  3 | CLK=1] C1_WIRE = 4, C2_WIRE = 3
-[  3 | CLK=1] MemCTR: C2_WRITE_LINE, A2 = 000000000000010
-[  3 | CLK=1] MemCTR: Wrote byte 211 = 11010011 to ram[0000000000000100000000]
-[  3 | CLK=1] MemCTR: Wrote byte 125 = 01111101 to ram[0000000000000100000001]
-[  4 | CLK=0] <Finished sending>
+[  4 | CLK=0] Cache: Sending byte: 211 = 11010011
+[  4 | CLK=0] Cache: Sending byte: 125 = 01111101
 [  4 | CLK=0] C1_WIRE = 0, C2_WIRE = 3
-[  5 | CLK=1] Cache: Sending byte: 207 = 11001111
-[  5 | CLK=1] Cache: Sending byte:  99 = 01100011
-[  5 | CLK=1] MemCTR: Wrote byte 207 = 11001111 to ram[0000000000000100000010]
-[  5 | CLK=1] MemCTR: Wrote byte  99 = 01100011 to ram[0000000000000100000011]
 [  5 | CLK=1] C1_WIRE = 0, C2_WIRE = 3
+[  5 | CLK=1] MemCTR: C2_WRITE_LINE, A2 = 000000000000010
+[  5 | CLK=1] MemCTR: Wrote byte 211 = 11010011 to ram[0000000000000100000000]
+[  5 | CLK=1] MemCTR: Wrote byte 125 = 01111101 to ram[0000000000000100000001]
+[  6 | CLK=0] Cache: Sending byte: 207 = 11001111
+[  6 | CLK=0] Cache: Sending byte:  99 = 01100011
 [  6 | CLK=0] C1_WIRE = 0, C2_WIRE = 3
-[  7 | CLK=1] Cache: Sending byte: 214 = 11010110
-[  7 | CLK=1] Cache: Sending byte:  80 = 01010000
-[  7 | CLK=1] MemCTR: Wrote byte 214 = 11010110 to ram[0000000000000100000100]
-[  7 | CLK=1] MemCTR: Wrote byte  80 = 01010000 to ram[0000000000000100000101]
+[  7 | CLK=1] MemCTR: Wrote byte 207 = 11001111 to ram[0000000000000100000010]
+[  7 | CLK=1] MemCTR: Wrote byte  99 = 01100011 to ram[0000000000000100000011]
 [  7 | CLK=1] C1_WIRE = 0, C2_WIRE = 3
+[  8 | CLK=0] Cache: Sending byte: 214 = 11010110
+[  8 | CLK=0] Cache: Sending byte:  80 = 01010000
 [  8 | CLK=0] C1_WIRE = 0, C2_WIRE = 3
-[  9 | CLK=1] Cache: Sending byte:  85 = 01010101
-[  9 | CLK=1] Cache: Sending byte:  64 = 01000000
-[  9 | CLK=1] MemCTR: Wrote byte  85 = 01010101 to ram[0000000000000100000110]
-[  9 | CLK=1] MemCTR: Wrote byte  64 = 01000000 to ram[0000000000000100000111]
+[  9 | CLK=1] MemCTR: Wrote byte 214 = 11010110 to ram[0000000000000100000100]
+[  9 | CLK=1] MemCTR: Wrote byte  80 = 01010000 to ram[0000000000000100000101]
 [  9 | CLK=1] C1_WIRE = 0, C2_WIRE = 3
+[ 10 | CLK=0] Cache: Sending byte:  85 = 01010101
+[ 10 | CLK=0] Cache: Sending byte:  64 = 01000000
 [ 10 | CLK=0] C1_WIRE = 0, C2_WIRE = 3
-[ 11 | CLK=1] Cache: Sending byte:  13 = 00001101
-[ 11 | CLK=1] Cache: Sending byte: 145 = 10010001
-[ 11 | CLK=1] MemCTR: Wrote byte  13 = 00001101 to ram[0000000000000100001000]
-[ 11 | CLK=1] MemCTR: Wrote byte 145 = 10010001 to ram[0000000000000100001001]
+[ 11 | CLK=1] MemCTR: Wrote byte  85 = 01010101 to ram[0000000000000100000110]
+[ 11 | CLK=1] MemCTR: Wrote byte  64 = 01000000 to ram[0000000000000100000111]
 [ 11 | CLK=1] C1_WIRE = 0, C2_WIRE = 3
+[ 12 | CLK=0] Cache: Sending byte:  13 = 00001101
+[ 12 | CLK=0] Cache: Sending byte: 145 = 10010001
 [ 12 | CLK=0] C1_WIRE = 0, C2_WIRE = 3
-[ 13 | CLK=1] Cache: Sending byte: 115 = 01110011
-[ 13 | CLK=1] Cache: Sending byte: 216 = 11011000
-[ 13 | CLK=1] MemCTR: Wrote byte 115 = 01110011 to ram[0000000000000100001010]
-[ 13 | CLK=1] MemCTR: Wrote byte 216 = 11011000 to ram[0000000000000100001011]
+[ 13 | CLK=1] MemCTR: Wrote byte  13 = 00001101 to ram[0000000000000100001000]
+[ 13 | CLK=1] MemCTR: Wrote byte 145 = 10010001 to ram[0000000000000100001001]
 [ 13 | CLK=1] C1_WIRE = 0, C2_WIRE = 3
+[ 14 | CLK=0] Cache: Sending byte: 115 = 01110011
+[ 14 | CLK=0] Cache: Sending byte: 216 = 11011000
 [ 14 | CLK=0] C1_WIRE = 0, C2_WIRE = 3
-[ 15 | CLK=1] Cache: Sending byte: 185 = 10111001
-[ 15 | CLK=1] Cache: Sending byte: 226 = 11100010
-[ 15 | CLK=1] MemCTR: Wrote byte 185 = 10111001 to ram[0000000000000100001100]
-[ 15 | CLK=1] MemCTR: Wrote byte 226 = 11100010 to ram[0000000000000100001101]
+[ 15 | CLK=1] MemCTR: Wrote byte 115 = 01110011 to ram[0000000000000100001010]
+[ 15 | CLK=1] MemCTR: Wrote byte 216 = 11011000 to ram[0000000000000100001011]
 [ 15 | CLK=1] C1_WIRE = 0, C2_WIRE = 3
+[ 16 | CLK=0] Cache: Sending byte: 185 = 10111001
+[ 16 | CLK=0] Cache: Sending byte: 226 = 11100010
 [ 16 | CLK=0] C1_WIRE = 0, C2_WIRE = 3
-[ 17 | CLK=1] Cache: Sending byte: 226 = 11100010
-[ 17 | CLK=1] Cache: Sending byte:  70 = 01000110
-[ 17 | CLK=1] MemCTR: Wrote byte 226 = 11100010 to ram[0000000000000100001110]
-[ 17 | CLK=1] MemCTR: Wrote byte  70 = 01000110 to ram[0000000000000100001111]
+[ 17 | CLK=1] MemCTR: Wrote byte 185 = 10111001 to ram[0000000000000100001100]
+[ 17 | CLK=1] MemCTR: Wrote byte 226 = 11100010 to ram[0000000000000100001101]
 [ 17 | CLK=1] C1_WIRE = 0, C2_WIRE = 3
-[ 18 | CLK=0] C1_WIRE = 0, C2_WIRE = 0
+[ 18 | CLK=0] Cache: Sending byte: 226 = 11100010
+[ 18 | CLK=0] Cache: Sending byte:  70 = 01000110
+[ 18 | CLK=0] C1_WIRE = 0, C2_WIRE = 3
+[ 19 | CLK=1] MemCTR: Wrote byte 226 = 11100010 to ram[0000000000000100001110]
+[ 19 | CLK=1] MemCTR: Wrote byte  70 = 01000110 to ram[0000000000000100001111]
 [ 19 | CLK=1] C1_WIRE = 0, C2_WIRE = 0
 [ 20 | CLK=0] C1_WIRE = 0, C2_WIRE = 0
 [ 21 | CLK=1] C1_WIRE = 0, C2_WIRE = 0
@@ -242,16 +242,15 @@ Invalidating line: set = 00010, line = 1 | D: 1
 [200 | CLK=0] C1_WIRE = 0, C2_WIRE = 0
 [201 | CLK=1] C1_WIRE = 0, C2_WIRE = 0
 [202 | CLK=0] C1_WIRE = 0, C2_WIRE = 0
-[203 | CLK=1] Cache received C2_RESPONSE
-[203 | CLK=1] C1_WIRE = 7, C2_WIRE = 1
-[203 | CLK=1] CPU received C1_RESPONSE
-[204 | CLK=0] C1_WIRE = z, C2_WIRE = z
-[205 | CLK=1] C1_WIRE = z, C2_WIRE = z
-[206 | CLK=0] C1_WIRE = z, C2_WIRE = z
-[207 | CLK=1] C1_WIRE = z, C2_WIRE = z
+[203 | CLK=1] C1_WIRE = 0, C2_WIRE = 0
+[204 | CLK=0] MemCTR: Sending C2_RESPONSE
+[204 | CLK=0] C1_WIRE = 0, C2_WIRE = 1
+[205 | CLK=1] C1_WIRE = 0, C2_WIRE = 1
+[205 | CLK=1] Cache received C2_RESPONSE
+[206 | CLK=0] Cache: Sending C1_RESPONSE
+[206 | CLK=0] C1_WIRE = 7, C2_WIRE = z
+[207 | CLK=1] C1_WIRE = 7, C2_WIRE = z
+[207 | CLK=1] CPU received C1_RESPONSE
 [208 | CLK=0] C1_WIRE = z, C2_WIRE = z
 [209 | CLK=1] C1_WIRE = z, C2_WIRE = z
-[210 | CLK=0] C1_WIRE = z, C2_WIRE = z
-[211 | CLK=1] C1_WIRE = z, C2_WIRE = z
-[212 | CLK=0] C1_WIRE = z, C2_WIRE = z
-testbench.sv:131: $finish called at 213 (1s)
+testbench.sv:129: $finish called at 210 (1s)

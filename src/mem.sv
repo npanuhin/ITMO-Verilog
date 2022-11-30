@@ -56,8 +56,9 @@ module MemCTR (
         listening_bus2 = 0; parse_A2();
         #1 C2 = C2_NOP;
 
-        #(MEM_CTR_DELAY - 1);
+        #(MEM_CTR_DELAY - 2);
 
+        $display("[%3t | CLK=%0d] MemCTR: Sending C2_RESPONSE", $time, $time % 2);
         C2 = C2_RESPONSE;
         for (int bbytes_start = 0; bbytes_start < CACHE_LINE_SIZE; bbytes_start += 2) begin
           send_bytes_D2(ram[address], ram[address + 1]);
@@ -68,14 +69,14 @@ module MemCTR (
           if (bbytes_start + 2 < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
         end
 
-        #1 `close_bus2; listening_bus2 = 1; // Когда CLK -> 0, закрываем соединения
+        #1 `close_bus2; listening_bus2 = 1;
       end
 
       C2_WRITE_LINE: begin
         $display("[%3t | CLK=%0d] MemCTR: C2_WRITE_LINE, A2 = %b", $time, $time % 2, A2_WIRE);
         listening_bus2 = 0; parse_A2();
         fork
-          #MEM_CTR_DELAY;  // С одной стороны ждём MEM_CTR_DELAY тактов до отправки C2_RESPONSE, а с другой параллельно читаем и пишем данные
+          #(MEM_CTR_DELAY - 2);  // С одной стороны ждём MEM_CTR_DELAY тактов до отправки C2_RESPONSE, а с другой параллельно читаем и пишем данные
           begin
             for (int bbytes_start = 0; bbytes_start < CACHE_LINE_SIZE; bbytes_start += 2) begin
               receive_bytes_D2(ram[address], ram[address + 1]);
@@ -86,15 +87,13 @@ module MemCTR (
               if (bbytes_start + 2 < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
             end
 
-            // Тут (в отличии от кэша) на последнем такте передачи данных шиной всё ещё владеет Cache
-            // Владение к MemCTR перейдёт только после CLK -> 0
-            #1; C2 = C2_NOP; #1;
+            C2 = C2_NOP;
           end
         join
 
-        // $display("[%3t | CLK=%0d] MemCTR: Sending C2_RESPONSE", $time, $time % 2);
-        C2 = C2_RESPONSE;
-        #1 `close_bus2; listening_bus2 = 1; // Когда CLK -> 0, закрываем соединения
+        #1 C2 = C2_RESPONSE;
+        $display("[%3t | CLK=%0d] MemCTR: Sending C2_RESPONSE", $time, $time % 2);
+        #2 `close_bus2; listening_bus2 = 1;
       end
     endcase
   end
