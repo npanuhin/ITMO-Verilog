@@ -89,7 +89,7 @@ module test;
     // $display("[%3t | CLK=%0d] CPU received C1_RESPONSE", $time, $time % 2);
 
     // ---------------------------------------------- Test C1_READ8/16/32 ----------------------------------------------
-    tag = 1;
+    tag = 0;
     set = 2;
     offset = 3;
     address = tag;
@@ -97,25 +97,30 @@ module test;
     $display("Testbench: sending C1_READ32, A1 = %b|%b|%b\n", tag, set, offset);
 
     #1;  // CLK -> 1
-    // Передача команды и первой части адреса
-    $display("[%3t | CLK=%0d] <Sending C1 and first half of A1>", $time, $time % 2);
-    C1 = C1_READ32;
-    A1 = `discard_last_n_bits(address, CACHE_OFFSET_SIZE);
-    #2
-    // Передача второй части адреса
-    $display("[%3t | CLK=%0d] <Sending second half of A1>", $time, $time % 2);
-    A1 = `last_n_bits(address, CACHE_OFFSET_SIZE);
-    #1
-    // Завершение взаимодействия
-    $display("[%3t | CLK=%0d] <Finished sending>", $time, $time % 2);
-    `close_bus1;
+    // Прочитаем один и те же данные два раза - во второй раз не должно быть похода в память
+    for (int iteration = 0; iteration < 2; ++iteration) begin
+      // Передача команды и первой части адреса
+      $display("[%3t | CLK=%0d] <Sending C1 and first half of A1>", $time, $time % 2);
+      C1 = C1_READ32;
+      A1 = `discard_last_n_bits(address, CACHE_OFFSET_SIZE);
+      #2
+      // Передача второй части адреса
+      $display("[%3t | CLK=%0d] <Sending second half of A1>", $time, $time % 2);
+      A1 = `last_n_bits(address, CACHE_OFFSET_SIZE);
+      #1
+      // Завершение взаимодействия
+      $display("[%3t | CLK=%0d] <Finished sending>", $time, $time % 2);
+      `close_bus1;
 
-    wait(C1_WIRE == C1_RESPONSE);
-    $display("[%3t | CLK=%0d] CPU received C1_RESPONSE", $time, $time % 2);
+      wait(C1_WIRE == C1_RESPONSE);
+      $display("[%3t | CLK=%0d] CPU received C1_RESPONSE", $time, $time % 2);
 
-    for (int bbytes_start = 0; bbytes_start < 32 / 8; bbytes_start += 2) begin
-      receive_bytes_D1();
-      if (bbytes_start + 2 < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
+      for (int bbytes_start = 0; bbytes_start < 32 / 8; bbytes_start += 2) begin
+        receive_bytes_D1();
+        if (bbytes_start + 2 < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
+      end
+      $display("\n---------- Iteration %0d finished ----------\n", iteration);
+      #2;
     end
 
     // -----------------------------------------------------------------------------------------------------------------

@@ -35,8 +35,8 @@ module MemCTR (
   // Передать данные в little-endian, то есть вначале (слева) идёт второй байт ([15:8]), потом (справа) первый ([7:0])
   // Тогда D = (второй байт, первый байт) -> второй байт = D2[15:8], первый байт = D2[7:0]
   task send_bytes_D2(input [7:0] bbyte1, input [7:0] bbyte2);
-    $display("[%3t | CLK=%0d] MemCTR: Sending byte: %d = %b", $time, $time % 2, bbyte1, bbyte1);
-    $display("[%3t | CLK=%0d] MemCTR: Sending byte: %d = %b", $time, $time % 2, bbyte2, bbyte2);
+    // $display("[%3t | CLK=%0d] MemCTR: Sending byte: %d = %b", $time, $time % 2, bbyte1, bbyte1);
+    // $display("[%3t | CLK=%0d] MemCTR: Sending byte: %d = %b", $time, $time % 2, bbyte2, bbyte2);
     D2[15:8] = bbyte2; D2[7:0] = bbyte1;
   endtask
   task receive_bytes_D2(output [7:0] bbyte1, output [7:0] bbyte2);
@@ -52,7 +52,7 @@ module MemCTR (
       C2_NOP: $display("[%3t | CLK=%0d] MemCTR: C2_NOP", $time, $time % 2);
 
       C2_READ_LINE: begin
-        $display("[%3t | CLK=%0d] MemCTR: C2_READ_LINE", $time, $time % 2);
+        $display("[%3t | CLK=%0d] MemCTR: C2_READ_LINE, A2 = %b", $time, $time % 2, A2_WIRE);
         listening_bus2 = 0; parse_A2();
         #1 C2 = C2_NOP;
 
@@ -61,6 +61,10 @@ module MemCTR (
         C2 = C2_RESPONSE;
         for (int bbytes_start = 0; bbytes_start < CACHE_LINE_SIZE; bbytes_start += 2) begin
           send_bytes_D2(ram[address], ram[address + 1]);
+          $display("[%3t | CLK=%0d] MemCTR: Sent byte %d = %b from ram[%b]", $time, $time % 2, ram[address], ram[address], address);
+          ++address;
+          $display("[%3t | CLK=%0d] MemCTR: Sent byte %d = %b from ram[%b]", $time, $time % 2, ram[address], ram[address], address);
+          ++address;
           if (bbytes_start + 2 < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
         end
 
