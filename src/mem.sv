@@ -32,8 +32,6 @@ module MemCTR (
       $display("Byte %2d: %d = %b", cur_byte, ram[cur_byte], ram[cur_byte]);
 
   // --------------------------------------------------- Main logic ----------------------------------------------------
-  // Передать данные в little-endian, то есть вначале (слева) идёт второй байт ([15:8]), потом (справа) первый ([7:0])
-  // Тогда D = (второй байт, первый байт) -> второй байт = D2[15:8], первый байт = D2[7:0]
   task send_bytes_D2(input [7:0] bbyte1, input [7:0] bbyte2);
     // $display("[%3t | CLK=%0d] MemCTR: Sending byte: %d = %b", $time, $time % 2, bbyte1, bbyte1);
     // $display("[%3t | CLK=%0d] MemCTR: Sending byte: %d = %b", $time, $time % 2, bbyte2, bbyte2);

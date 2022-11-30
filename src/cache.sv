@@ -11,17 +11,19 @@ module Cache (
 );
   `map_bus1; `map_bus2;  // Initialize wires
 
-  // Internal cache variables
+  // Cache system
   reg[7:0] data [CACHE_SETS_COUNT] [CACHE_WAY] [CACHE_LINE_SIZE];
   reg[7:0] tags [CACHE_SETS_COUNT] [CACHE_WAY];
   bit LRU_bit [CACHE_SETS_COUNT] [CACHE_WAY],
       valid   [CACHE_SETS_COUNT] [CACHE_WAY],
       dirty   [CACHE_SETS_COUNT] [CACHE_WAY];
 
+  // For storing A1 parts
   reg[CACHE_TAG_SIZE-1:0] req_tag;
   reg[CACHE_SET_SIZE-1:0] req_set;
   reg[CACHE_OFFSET_SIZE-1:0] req_offset;
 
+  // Internal variables
   bit listening_bus1 = 1;
   int found_line;
 
@@ -56,7 +58,7 @@ module Cache (
     end
 
   // --------------------------------------------------- Main logic ----------------------------------------------------
-  // Передать данные в little-endian, то есть вначале (слева) идёт второй байт ([15:8]), потом (справа) первый ([7:0])
+  // Передаём и получаем данные в little-endian, то есть вначале (слева) идёт второй байт ([15:8]), потом (справа) первый ([7:0])
   // Тогда D = (второй байт, первый байт) -> второй байт = D2[15:8], первый байт = D2[7:0]
   task send_bytes_D1(input [7:0] bbyte1, input [7:0] bbyte2);
     $display("[%3t | CLK=%0d] Cache: Sending byte: %d = %b", $time, $time % 2, bbyte1, bbyte1);
@@ -80,7 +82,8 @@ module Cache (
     A2[CACHE_SET_SIZE-1:0] = req_set;
   endtask
 
-  task parse_A1;  // duration: 2 tacts
+  // Parses A1 bus to A1 parts + finds valid line corresponding to these parts
+  task parse_A1;  // Called on CLK = 1
     req_tag = `discard_last_n_bits(A1_WIRE, CACHE_SET_SIZE);
     req_set = `last_n_bits(A1_WIRE, CACHE_SET_SIZE);
     #2 req_offset = A1_WIRE;
@@ -91,7 +94,7 @@ module Cache (
       if (valid[req_set][test_line] == 1 && tags[req_set][test_line] == req_tag) found_line = test_line;
   endtask
 
-  task invalidate_line(input [CACHE_SET_SIZE-1:0] set, input int line);  // duration: UNDEFINED! tacts, called on CLK = 0
+  task invalidate_line(input [CACHE_SET_SIZE-1:0] set, input int line);  // Called on CLK = 0
     $display("Invalidating line: set = %b, line = %0d | D: %0d", set, line, dirty[set][line]);
     // Если линия Dirty, то нужно сдампить её содержимое в Mem
     if (dirty[set][line]) begin
@@ -112,7 +115,7 @@ module Cache (
     end
   endtask
 
-  task find_spare_line();  // duration: UNDEFINED! tacts
+  task find_spare_line;  // Called on CLK = 0
     // Сначала ищем не занятую
     for (int test_line = 0; test_line < CACHE_WAY; ++test_line)
       if (valid[req_set][test_line] == 0) found_line = test_line;
@@ -126,7 +129,7 @@ module Cache (
     end
   endtask
 
-  task handle_c1_read(int read_bits);
+  task handle_c1_read(int read_bits);   // Called on CLK = 1
     $display("[%3t | CLK=%0d] Cache: C1_READ%0d, A1 = %b", $time, $time % 2, read_bits, A1_WIRE);
     listening_bus1 = 0; parse_A1();
 
@@ -140,7 +143,7 @@ module Cache (
       tags[req_set][found_line] = req_tag;
 
       #1 C2 = C2_READ_LINE; redirect_address();
-      #2 `close_bus2;  // Когда CLK -> 0, закрываем соединение
+      #2 `close_bus2;
       wait(CLK == 1 && C2_WIRE == C2_RESPONSE);
       $display("[%3t | CLK=%0d] Cache received C2_RESPONSE", $time, $time % 2);
 
@@ -174,10 +177,10 @@ module Cache (
         #2 send_bytes_D1(data[req_set][found_line][req_offset + 2], data[req_set][found_line][req_offset + 3]);
       end
     endcase
-    #2 `close_bus1; listening_bus1 = 1;  // Когда CLK -> 0, закрываем соединение
+    #2 `close_bus1; listening_bus1 = 1;
   endtask
 
-  task handle_c1_write(int write_bits);
+  task handle_c1_write(int write_bits);   // Called on CLK = 1
     $display("[%3t | CLK=%0d] Cache: C1_WRITE%0d, A1 = %b", $time, $time % 2, write_bits, A1_WIRE);
     listening_bus1 = 0; parse_A1();
     // TODO
@@ -210,7 +213,7 @@ module Cache (
 
         #1 C1 = C1_RESPONSE;
         $display("[%3t | CLK=%0d] Cache: Sending C1_RESPONSE", $time, $time % 2);
-        #2 `close_bus1; listening_bus1 = 1;  // Когда CLK -> 0, закрываем соединение
+        #2 `close_bus1; listening_bus1 = 1;
       end
     endcase
   end
