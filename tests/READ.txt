@@ -505,7 +505,7 @@ Invalidating line: set = 00010, line = 1 | D: 1
 [428 | CLK=0] C1_WIRE = 0, C2_WIRE = 1
 [429 | CLK=1] Cache: Wrote byte  35 = 00100011 to data[2][1][14]
 [429 | CLK=1] Cache: Wrote byte 231 = 11100111 to data[2][1][15]
-[429 | CLK=1] C1_WIRE = 0, C2_WIRE = z
+[429 | CLK=1] C1_WIRE = 0, C2_WIRE = 1
 [430 | CLK=0] Cache: Sending byte: 109 = 01101101
 [430 | CLK=0] Cache: Sending byte: 100 = 01100100
 [430 | CLK=0] C1_WIRE = 7, C2_WIRE = z

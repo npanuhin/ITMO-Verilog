@@ -95,26 +95,18 @@ module Cache (
     $display("Invalidating line: set = %b, line = %0d | D: %0d", set, line, dirty[set][line]);
     // Если линия Dirty, то нужно сдампить её содержимое в Mem
     if (dirty[set][line]) begin
-      fork
-        begin
-          #1; C1 = C1_NOP; #1;  // TODO этого тут быть не должно
-        end
-        #CACHE_HIT_DELAY;  // Минимум ждём столько времени, для реалистичности
-        begin  // Отправка данных в Mem
-          C2 = C2_WRITE_LINE;
-          A2[CACHE_TAG_SIZE+CACHE_SET_SIZE-1:CACHE_SET_SIZE] = tags[set][line];
-          A2[CACHE_SET_SIZE-1:0] = set;
+      C2 = C2_WRITE_LINE;
+      A2[CACHE_TAG_SIZE+CACHE_SET_SIZE-1:CACHE_SET_SIZE] = tags[set][line];
+      A2[CACHE_SET_SIZE-1:0] = set;
 
-          for (int bbytes_start = 0; bbytes_start < CACHE_LINE_SIZE; bbytes_start += 2) begin
-            send_bytes_D2(data[set][line][bbytes_start], data[set][line][bbytes_start + 1]);
-            if (bbytes_start + 2 < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
-          end
+      for (int bbytes_start = 0; bbytes_start < CACHE_LINE_SIZE; bbytes_start += 2) begin
+        send_bytes_D2(data[set][line][bbytes_start], data[set][line][bbytes_start + 1]);
+        if (bbytes_start + 2 < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
+      end
 
-          #1 `close_bus2;
-          wait(CLK == 1 && C2_WIRE == C2_RESPONSE);
-          $display("[%3t | CLK=%0d] Cache received C2_RESPONSE", $time, $time % 2);
-        end
-      join
+      #1 `close_bus2;
+      wait(CLK == 1 && C2_WIRE == C2_RESPONSE);
+      $display("[%3t | CLK=%0d] Cache received C2_RESPONSE", $time, $time % 2);
 
       reset_line(set, line);  // В конце очистить линию
     end

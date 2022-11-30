@@ -56,10 +56,10 @@ module MemCTR (
         listening_bus2 = 0; parse_A2();
         #1 C2 = C2_NOP;
 
-        #(MEM_CTR_DELAY - 2);
+        #(MEM_CTR_DELAY - 3);
 
+        #1 C2 = C2_RESPONSE;
         $display("[%3t | CLK=%0d] MemCTR: Sending C2_RESPONSE", $time, $time % 2);
-        C2 = C2_RESPONSE;
         for (int bbytes_start = 0; bbytes_start < CACHE_LINE_SIZE; bbytes_start += 2) begin
           send_bytes_D2(ram[address], ram[address + 1]);
           $display("[%3t | CLK=%0d] MemCTR: Sent byte %d = %b from ram[%b]", $time, $time % 2, ram[address], ram[address], address);
@@ -68,8 +68,7 @@ module MemCTR (
           ++address;
           if (bbytes_start + 2 < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
         end
-
-        #1 `close_bus2; listening_bus2 = 1;
+        #2 `close_bus2; listening_bus2 = 1;
       end
 
       C2_WRITE_LINE: begin
