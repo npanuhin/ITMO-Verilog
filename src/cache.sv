@@ -36,7 +36,7 @@ module Cache (
   reg[CACHE_TAG_SIZE + CACHE_SET_SIZE - 1:0] mem_address;
   // reg[DATA_BUS_SIZE-1:0] bus2_data;
 
-  bit listening_bus1 = 1, listening_bus2 = 0;
+  bit listening_bus1 = 1;
 
   int found_line;
 
@@ -77,14 +77,12 @@ module Cache (
     bbyte2 = D2_WIRE[15:8]; bbyte1 = D2_WIRE[7:0];
   endtask
 
-  task format_A2;
+  task redirect_address;
     A2[CACHE_TAG_SIZE+CACHE_SET_SIZE-1:CACHE_SET_SIZE] = tag;
     A2[CACHE_SET_SIZE-1:0] = set;
   endtask
 
-  // Parses A1, duration: 2 tacts
-  // Result: filled tag, set, offset and found_line
-  task parse_A1;
+  task parse_A1;  // duration: 2 tacts
     tag = `discard_last_n_bits(A1_WIRE, CACHE_SET_SIZE);
     set = `last_n_bits(A1_WIRE, CACHE_SET_SIZE);
     #2 offset = A1_WIRE;
@@ -128,7 +126,7 @@ module Cache (
           // TODO отпределить found_line
 
           #CACHE_MISS_DELAY;
-          C2 = C2_READ_LINE; format_A2();
+          C2 = C2_READ_LINE; redirect_address();
           #1;
           `close_bus2;
           wait(C2_WIRE == C2_RESPONSE);
@@ -165,8 +163,7 @@ module Cache (
       16: send_bytes_D1(data[set][found_line][offset], data[set][found_line][offset + 1]);
       32: begin
         send_bytes_D1(data[set][found_line][offset], data[set][found_line][offset + 1]);
-        #2;
-        send_bytes_D1(data[set][found_line][offset + 2], data[set][found_line][offset + 3]);
+        #2 send_bytes_D1(data[set][found_line][offset + 2], data[set][found_line][offset + 3]);
       end
     endcase
     #1; `close_bus1; listening_bus1 = 1;  // Когда CLK -> 0, закрываем соединения

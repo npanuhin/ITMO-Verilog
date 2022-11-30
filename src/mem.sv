@@ -21,9 +21,8 @@ module MemCTR (
   initial begin
     intialize_ram();
     // $display("RAM:");
-    // for (memory_pointer = 0; memory_pointer < 100; memory_pointer += 1) begin
+    // for (memory_pointer = 0; memory_pointer < 100; memory_pointer += 1)
     //   $display("[%2d] %d", memory_pointer, ram[memory_pointer]);
-    // end
     // $display();
   end
 
@@ -44,16 +43,20 @@ module MemCTR (
     bbyte2 = D2_WIRE[15:8]; bbyte1 = D2_WIRE[7:0];
   endtask
 
+  task parse_A2;
+    address = A2_WIRE << CACHE_OFFSET_SIZE;
+  endtask
+
   always @(posedge CLK) begin
     if (listening_bus2) case (C2_WIRE)
       C2_NOP: $display("[%3t | CLK=%0d] MemCTR: C2_NOP", $time, $time % 2);
 
       C2_READ_LINE: begin
         $display("[%3t | CLK=%0d] MemCTR: C2_READ_LINE", $time, $time % 2);
-        listening_bus2 = 0; address = A2_WIRE << CACHE_OFFSET_SIZE;
-        #2 C2 = C2_NOP;
+        listening_bus2 = 0; parse_A2();
+        #1 C2 = C2_NOP;
 
-        #(MEM_CTR_DELAY - 2);
+        #(MEM_CTR_DELAY - 1);
 
         C2 = C2_RESPONSE;
         for (int bbytes_start = 0; bbytes_start < CACHE_LINE_SIZE; bbytes_start += 2) begin
@@ -66,7 +69,7 @@ module MemCTR (
 
       C2_WRITE_LINE: begin
         $display("[%3t | CLK=%0d] MemCTR: C2_WRITE_LINE, A2 = %b", $time, $time % 2, A2_WIRE);
-        listening_bus2 = 0; address = A2_WIRE << CACHE_OFFSET_SIZE;
+        listening_bus2 = 0; parse_A2();
         fork
           #MEM_CTR_DELAY;  // С одной стороны ждём MEM_CTR_DELAY тактов до отправки C2_RESPONSE, а с другой параллельно читаем и пишем данные
           begin
