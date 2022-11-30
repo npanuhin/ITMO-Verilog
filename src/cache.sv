@@ -77,11 +77,6 @@ module Cache (
     bbyte2 = D2_WIRE[15:8]; bbyte1 = D2_WIRE[7:0];
   endtask
 
-  task redirect_address;
-    A2[CACHE_TAG_SIZE+CACHE_SET_SIZE-1:CACHE_SET_SIZE] = req_tag;
-    A2[CACHE_SET_SIZE-1:0] = req_set;
-  endtask
-
   // Parses A1 bus to A1 parts + finds valid line corresponding to these parts
   task parse_A1;  // Called on CLK = 1
     req_tag = `discard_last_n_bits(A1_WIRE, CACHE_SET_SIZE);
@@ -94,25 +89,54 @@ module Cache (
       if (valid[req_set][test_line] == 1 && tags[req_set][test_line] == req_tag) found_line = test_line;
   endtask
 
+  task read_line_from_MEM(input [CACHE_TAG_SIZE-1:0] tag, input [CACHE_SET_SIZE-1:0] set, input int line);  // Called on CLK = 0
+    tags[req_set][found_line] = req_tag;
+
+    C2 = C2_READ_LINE;
+    A2[CACHE_TAG_SIZE+CACHE_SET_SIZE-1:CACHE_SET_SIZE] = tag;
+    A2[CACHE_SET_SIZE-1:0] = set;
+    #2 `close_bus2;
+    wait(CLK == 1 && C2_WIRE == C2_RESPONSE);
+    $display("[%3t | CLK=%0d] Cache received C2_RESPONSE", $time, $time % 2);
+
+    for (int bbytes_start = 0; bbytes_start < CACHE_LINE_SIZE; bbytes_start += 2) begin
+      receive_bytes_D2(data[set][line][bbytes_start], data[set][line][bbytes_start + 1]);
+      $display(
+        "[%3t | CLK=%0d] Cache: Wrote byte %d = %b to data[%0d][%0d][%0d]", $time, $time % 2,
+        data[set][line][bbytes_start], data[set][line][bbytes_start], set, line, bbytes_start
+      );
+      $display(
+        "[%3t | CLK=%0d] Cache: Wrote byte %d = %b to data[%0d][%0d][%0d]", $time, $time % 2,
+        data[set][line][bbytes_start + 1], data[set][line][bbytes_start + 1], set, line, bbytes_start + 1
+      );
+      if (bbytes_start + 2 < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
+    end
+    valid[set][line] = 1;
+    dirty[set][line] = 0;
+  endtask
+
+  task write_line_to_MEM(input [CACHE_SET_SIZE-1:0] set, input int line);  // Called on CLK = 0
+    C2 = C2_WRITE_LINE;
+    A2[CACHE_TAG_SIZE+CACHE_SET_SIZE-1:CACHE_SET_SIZE] = tags[set][line];
+    A2[CACHE_SET_SIZE-1:0] = set;
+
+    for (int bbytes_start = 0; bbytes_start < CACHE_LINE_SIZE; bbytes_start += 2) begin
+      send_bytes_D2(data[set][line][bbytes_start], data[set][line][bbytes_start + 1]);
+      if (bbytes_start + 2 < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
+    end
+
+    #1 `close_bus2;
+    wait(CLK == 1 && C2_WIRE == C2_RESPONSE);
+    $display("[%3t | CLK=%0d] Cache received C2_RESPONSE", $time, $time % 2);
+  endtask
+
   task invalidate_line(input [CACHE_SET_SIZE-1:0] set, input int line);  // Called on CLK = 0
     $display("Invalidating line: set = %b, line = %0d | D: %0d", set, line, dirty[set][line]);
     // Если линия Dirty, то нужно сдампить её содержимое в Mem
-    if (dirty[set][line]) begin
-      C2 = C2_WRITE_LINE;
-      A2[CACHE_TAG_SIZE+CACHE_SET_SIZE-1:CACHE_SET_SIZE] = tags[set][line];
-      A2[CACHE_SET_SIZE-1:0] = set;
+    if (dirty[set][line]) write_line_to_MEM(set, line);
 
-      for (int bbytes_start = 0; bbytes_start < CACHE_LINE_SIZE; bbytes_start += 2) begin
-        send_bytes_D2(data[set][line][bbytes_start], data[set][line][bbytes_start + 1]);
-        if (bbytes_start + 2 < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
-      end
-
-      #1 `close_bus2;
-      wait(CLK == 1 && C2_WIRE == C2_RESPONSE);
-      $display("[%3t | CLK=%0d] Cache received C2_RESPONSE", $time, $time % 2);
-
-      reset_line(set, line);  // В конце очистить линию
-    end
+    // reset_line(set, line);  // Правильнее будет сделать valid[set][line] = 0, но так проще тестировать
+    valid[set][line] = 0;
   endtask
 
   task find_spare_line;  // Called on CLK = 0
@@ -135,30 +159,12 @@ module Cache (
 
     if (found_line == -1) begin
       $display("Line not found, finding spare one");
-      // Надо найти свободную линию, пойти в Mem, прочитать строчку и сохранить её
       #1 C1 = C1_NOP;
       #(CACHE_MISS_DELAY - 4);
 
       find_spare_line();
-      tags[req_set][found_line] = req_tag;
+      #1 read_line_from_MEM(req_tag, req_set, found_line);
 
-      #1 C2 = C2_READ_LINE; redirect_address();
-      #2 `close_bus2;
-      wait(CLK == 1 && C2_WIRE == C2_RESPONSE);
-      $display("[%3t | CLK=%0d] Cache received C2_RESPONSE", $time, $time % 2);
-
-      for (int bbytes_start = 0; bbytes_start < CACHE_LINE_SIZE; bbytes_start += 2) begin
-        receive_bytes_D2(data[req_set][found_line][bbytes_start], data[req_set][found_line][bbytes_start + 1]);
-        $display(
-          "[%3t | CLK=%0d] Cache: Wrote byte %d = %b to data[%0d][%0d][%0d]", $time, $time % 2,
-          data[req_set][found_line][bbytes_start], data[req_set][found_line][bbytes_start], req_set, found_line, bbytes_start
-        );
-        $display(
-          "[%3t | CLK=%0d] Cache: Wrote byte %d = %b to data[%0d][%0d][%0d]", $time, $time % 2,
-          data[req_set][found_line][bbytes_start + 1], data[req_set][found_line][bbytes_start + 1], req_set, found_line, bbytes_start + 1
-        );
-        if (bbytes_start + 2 < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
-      end
     end else begin
       $display("Found line #%0d", found_line);
       #1 C1 = C1_NOP;
@@ -190,11 +196,11 @@ module Cache (
     if (listening_bus1) case (C1_WIRE)
       C1_NOP: $display("[%3t | CLK=%0d] Cache: C1_NOP", $time, $time % 2);
 
-      C1_READ8: handle_c1_read(8);
+      C1_READ8:  handle_c1_read(8);
       C1_READ16: handle_c1_read(16);
       C1_READ32: handle_c1_read(32);
 
-      C1_WRITE8: handle_c1_write(8);
+      C1_WRITE8:  handle_c1_write(8);
       C1_WRITE16: handle_c1_write(16);
       C1_WRITE32: handle_c1_write(32);
 
