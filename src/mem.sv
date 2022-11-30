@@ -68,7 +68,7 @@ module MemCTR (
           if (bbytes_start + 2 < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
         end
 
-        #1 `close_bus2; listening_bus2 = 1;
+        #1 `close_bus2; listening_bus2 = 1; // Когда CLK -> 0, закрываем соединения
       end
 
       C2_WRITE_LINE: begin
@@ -92,10 +92,9 @@ module MemCTR (
           end
         join
 
-        // На последнем такте работы отправляем C2_RESPONSE и, когда CLK -> 0, закрываем соединения
         // $display("[%3t | CLK=%0d] MemCTR: Sending C2_RESPONSE", $time, $time % 2);
         C2 = C2_RESPONSE;
-        #1 `close_bus2; listening_bus2 = 1;
+        #1 `close_bus2; listening_bus2 = 1; // Когда CLK -> 0, закрываем соединения
       end
     endcase
   end

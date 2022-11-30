@@ -18,6 +18,14 @@ module Cache (
       valid   [CACHE_SETS_COUNT] [CACHE_WAY],
       dirty   [CACHE_SETS_COUNT] [CACHE_WAY];
 
+  reg[CACHE_TAG_SIZE-1:0] req_tag;
+  reg[CACHE_SET_SIZE-1:0] req_set;
+  reg[CACHE_OFFSET_SIZE-1:0] req_offset;
+
+  bit listening_bus1 = 1;
+  int found_line;
+
+  // Initialization & RESET
   task reset_line(int cur_set, int cur_line);
     LRU_bit[cur_set][cur_line] = 0;
     valid[cur_set][cur_line] = 1;  // For testing, should be 0
@@ -26,24 +34,11 @@ module Cache (
     for (int bbyte = 0; bbyte < CACHE_LINE_SIZE; ++bbyte)  // Optional
       data[cur_set][cur_line][bbyte] = $random(SEED) >> 16;  // For testing, should be 'x
   endtask
-
   task reset;
     for (int cur_set = 0; cur_set < CACHE_SETS_COUNT; ++cur_set)
       for (int cur_line = 0; cur_line < CACHE_WAY; ++cur_line)
         reset_line(cur_set, cur_line);
   endtask
-
-  reg[CACHE_TAG_SIZE-1:0] req_tag;
-  reg[CACHE_SET_SIZE-1:0] req_set;
-  reg[CACHE_OFFSET_SIZE-1:0] req_offset;
-  // reg[CACHE_TAG_SIZE + CACHE_SET_SIZE - 1:0] mem_address;
-  // reg[DATA_BUS_SIZE-1:0] bus2_data;
-
-  bit listening_bus1 = 1;
-
-  int found_line;
-
-  // Initialization & RESET
   initial reset();
   always @(posedge RESET) reset();
 
@@ -96,27 +91,13 @@ module Cache (
       if (valid[req_set][test_line] == 1 && tags[req_set][test_line] == req_tag) found_line = test_line;
   endtask
 
-  // // Searches valid lines
-  // function int find_line();
-  //   find_line = -1;
-  //   for (int found_line = 0; found_line < CACHE_WAY; ++found_line)
-  //     if (valid[set][found_line] == 0 && tags[set][found_line] == tag) find_line = found_line;
-  // endfunction
-
-  // Searches all lines and find LRU one
-  // function int find_substitution_line();
-  //   find_line = -1;
-  //   for (int found_line = 0; found_line < CACHE_WAY; ++found_line)
-  //     if (valid_dirty[set][found_line][1] == 0 && tags[set][found_line] == tag) find_line = found_line;
-  // endfunction
-
-  task invalidate_line(input [CACHE_SET_SIZE-1:0] set, input int line);
+  task invalidate_line(input [CACHE_SET_SIZE-1:0] set, input int line);  // duration: UNDEFINED! tacts
     $display("Invalidating line: set = %b, line = %0d | D: %0d", set, line, dirty[set][line]);
     // Если линия Dirty, то нужно сдампить её содержимое в Mem
     if (dirty[set][line]) begin
       fork
         begin
-          #1; C1 = C1_NOP; #1;
+          #1; C1 = C1_NOP; #1;  // TODO этого тут быть не должно
         end
         #CACHE_HIT_DELAY;  // Минимум ждём столько времени, для реалистичности
         begin  // Отправка данных в Mem
@@ -140,7 +121,7 @@ module Cache (
     end
   endtask
 
-  task find_spare_line();  // duration: TODO tacts
+  task find_spare_line();  // duration: UNDEFINED! tacts
     // Сначала ищем не занятую
     for (int test_line = 0; test_line < CACHE_WAY; ++test_line)
       if (valid[req_set][test_line] == 0) found_line = test_line;
@@ -172,8 +153,7 @@ module Cache (
 
           #2;  // Надо подождать 1 такт, так как на текущем такте MemCTR ещё только послал RESPONSE, владение к нам перейдёт через пол такта
           C2 = C2_READ_LINE; redirect_address();
-          #1;
-          `close_bus2;
+          #1 `close_bus2;  // Когда CLK -> 0, закрываем соединение
           wait(C2_WIRE == C2_RESPONSE);
           $display("[%3t | CLK=%0d] Cache received C2_RESPONSE", $time, $time % 2);
 
@@ -204,7 +184,6 @@ module Cache (
     LRU_bit[req_set][found_line] = 1;
     LRU_bit[req_set][!found_line] = 0;
 
-    // Оправляем данные в CPU, помня про little-endian, то есть сначала идёт третий байт, потом второй, потом первый
     C1 = C1_RESPONSE;
     case (read_bits)
       8: send_bytes_D1(data[req_set][found_line][req_offset], 0);
@@ -214,7 +193,7 @@ module Cache (
         #2 send_bytes_D1(data[req_set][found_line][req_offset + 2], data[req_set][found_line][req_offset + 3]);
       end
     endcase
-    #1; `close_bus1; listening_bus1 = 1;  // Когда CLK -> 0, закрываем соединения
+    #1 `close_bus1; listening_bus1 = 1;  // Когда CLK -> 0, закрываем соединение
   endtask
 
   task handle_c1_write(int write_bits);
@@ -248,9 +227,8 @@ module Cache (
           invalidate_line(req_set, found_line);
         end
 
-        // На последнем такте работы отправляем C1_RESPONSE и, когда CLK -> 0, закрываем соединения
         C1 = C1_RESPONSE;
-        #1; `close_bus1; listening_bus1 = 1;
+        #1 `close_bus1; listening_bus1 = 1;  // Когда CLK -> 0, закрываем соединение
       end
     endcase
   end
