@@ -25,6 +25,7 @@ module Cache (
 
   // Internal variables
   bit listening_bus1 = 1;
+  reg[7:0] write_buffer [4]; // Max is WRITE32 = 4 bytes
   int found_line;
 
   // Initialization & RESET
@@ -153,7 +154,7 @@ module Cache (
     end
   endtask
 
-  task handle_c1_read(int read_bits);   // Called on CLK = 1
+  task handle_c1_read(int read_bits);  // Called on CLK = 1
     $display("[%3t | CLK=%0d] Cache: C1_READ%0d, A1 = %b", $time, $time % 2, read_bits, A1_WIRE);
     listening_bus1 = 0; parse_A1();
 
@@ -176,7 +177,7 @@ module Cache (
 
     #1 C1 = C1_RESPONSE;
     case (read_bits)
-      8: send_bytes_D1(data[req_set][found_line][req_offset], 0);
+      8:  send_bytes_D1(data[req_set][found_line][req_offset], 0);
       16: send_bytes_D1(data[req_set][found_line][req_offset], data[req_set][found_line][req_offset + 1]);
       32: begin
         send_bytes_D1(data[req_set][found_line][req_offset], data[req_set][found_line][req_offset + 1]);
@@ -186,10 +187,46 @@ module Cache (
     #2 `close_bus1; listening_bus1 = 1;
   endtask
 
-  task handle_c1_write(int write_bits);   // Called on CLK = 1
+  task handle_c1_write(int write_bits);  // Called on CLK = 1
     $display("[%3t | CLK=%0d] Cache: C1_WRITE%0d, A1 = %b", $time, $time % 2, write_bits, A1_WIRE);
-    listening_bus1 = 0; parse_A1();
-    // TODO
+    listening_bus1 = 0;
+
+    // WARNING, UNTESTED, TODO
+
+    fork
+      parse_A1();
+      case (write_bits)
+        8:  receive_bytes_D1(write_buffer[0], write_buffer[1]);  // Second byte is just a placeholder
+        16: receive_bytes_D1(write_buffer[0], write_buffer[1]);
+        32: begin
+          receive_bytes_D1(write_buffer[0], write_buffer[1]);
+          #2 receive_bytes_D1(write_buffer[2], write_buffer[3]);
+        end
+      endcase
+    join
+
+    if (found_line == -1) begin
+      $display("Line not found, finding spare one");
+      // TODO
+    end else begin
+      $display("Found line #%0d", found_line);
+      #1 C1 = C1_NOP;
+      #(CACHE_HIT_DELAY - 5);
+    end
+
+    LRU_bit[req_set][found_line] = 1;
+    LRU_bit[req_set][!found_line] = 0;
+
+    for (int i = 0; i < 8; i += 1) begin
+      data[req_set][found_line][req_offset + i] = write_buffer[i];
+      $display(
+        "[%3t | CLK=%0d] Cache: Wrote byte %d = %b to data[%0d][%0d][%0d]",
+        $time, $time % 2, write_buffer[i], write_buffer[i], req_set, found_line, req_offset + i
+      );
+    end
+
+    #1 C1 = C1_RESPONSE;
+    #2 `close_bus1; listening_bus1 = 1;
   endtask
 
   always @(posedge CLK) begin

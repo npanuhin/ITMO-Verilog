@@ -15,7 +15,7 @@ module MemCTR (
 
   // Initialization & RESET
   task intialize_ram;
-    for (int i = 0; i < 10000; ++i) ram[i] = $random(SEED) >> 16;   // 10000 for testing, should be MEM_SIZE
+    for (int i = 0; i < 10000; ++i) ram[i] = $random(SEED) >> 16;  // 10000 for testing, should be MEM_SIZE
   endtask
   always @(RESET) intialize_ram();
   initial begin
