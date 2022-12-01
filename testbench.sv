@@ -64,7 +64,7 @@ module cache_test;
   //   `log; $display("CPU: Received byte: %d = %b", D1_WIRE[15:8], D1_WIRE[15:8]);
   // endtask
 
-  initial begin
+  // initial begin
     // $dumpfile("dump.vcd"); $dumpvars;
     // -------------------------------------------- Test C1_INVALIDATE_LINE --------------------------------------------
     // tag = 1;
@@ -162,25 +162,28 @@ module cache_test;
     // C_DUMP = 1;
     // M_DUMP = 1;
     // #3 $finish;
-  end
+  // end
 
   // --------------------------------------------------- Actual task ---------------------------------------------------
   task add(output int result, input int a, input int b);
-    #1 result = a + b;
+    #2 result = a + b;
   endtask
   task multiply(output int result, input int a, input int b);
-    #5 result = a * b;
+    #10 result = a * b;
   endtask
   task assign_value(output int result, input int value);
-    #1 result = value;
+    #2 result = value;
   endtask
   // ---------- READ8/16/32 ----------
   task common_read(input int address, input int command);
+    // `log; $display("CPU sending READ command");
     C1 = command;
     A1 = `discard_last_n_bits(address, CACHE_OFFSET_SIZE);
     #2 A1 = `last_n_bits(address, CACHE_OFFSET_SIZE);
     #2 `close_bus1;
     wait(CLK == 1 && C1_WIRE == C1_RESPONSE);
+    #1;
+    #10;  // TODO
   endtask
   task read8(input int address, output [7:0] result);
     common_read(address, C1_READ8);
@@ -200,29 +203,50 @@ module cache_test;
     result[7:0] = D1[15:8];  // byte 4
   endtask
   // ---------- WRITE8/16/32 ----------
-  task common_write(input int address, input int command);
-    C1 = command;
+  // task common_write(input int address, input int command);
+  //   C1 = command;
+  //   A1 = `discard_last_n_bits(address, CACHE_OFFSET_SIZE);
+  //   #2 A1 = `last_n_bits(address, CACHE_OFFSET_SIZE);
+  //   #2 `close_bus1;
+  //   wait(CLK == 1 && C1_WIRE == C1_RESPONSE);
+  //   #10;  // TODO
+  // endtask
+  task write8(input int address, input [7:0] data);
+    // `log; $display("CPU sending WRITE command");
+    C1 = C1_WRITE8;
     A1 = `discard_last_n_bits(address, CACHE_OFFSET_SIZE);
-    #2 A1 = `last_n_bits(address, CACHE_OFFSET_SIZE);
+    D1 = data;  // byte 1
+    #2;
+    A1 = `last_n_bits(address, CACHE_OFFSET_SIZE);
     #2 `close_bus1;
     wait(CLK == 1 && C1_WIRE == C1_RESPONSE);
-  endtask
-  task write8(input int address, input [7:0] data);
-    common_write(address, C1_WRITE8);
-    D1 = data;  // byte 1
+    #1;
   endtask
   task write16(input int address, input [15:0] data);
-    common_write(address, C1_WRITE16);
+    // `log; $display("CPU sending WRITE command");
+    C1 = C1_WRITE16;
+    A1 = `discard_last_n_bits(address, CACHE_OFFSET_SIZE);
     D1[7:0] = data[15:8];  // byte 1
     D1[15:8] = data[7:0];  // byte 2
+    #2;
+    A1 = `last_n_bits(address, CACHE_OFFSET_SIZE);
+    #2 `close_bus1;
+    wait(CLK == 1 && C1_WIRE == C1_RESPONSE);
+    #1;
   endtask
   task write32(input int address, input [31:0] data);
-    common_write(address, C1_WRITE32);
+    // `log; $display("CPU sending WRITE command");
+    C1 = C1_WRITE32;
+    A1 = `discard_last_n_bits(address, CACHE_OFFSET_SIZE);
     D1[7:0] = data[31:24];   // byte 1
     D1[15:8] = data[23:16];  // byte 2
     #2;
+    A1 = `last_n_bits(address, CACHE_OFFSET_SIZE);
     D1[7:0] = data[15:8];  // byte 3
     D1[15:8] = data[7:0];  // byte 4
+    #2 `close_bus1;
+    wait(CLK == 1 && C1_WIRE == C1_RESPONSE);
+    #1;
   endtask
 
   real cache_hit_percentage;
@@ -254,23 +278,31 @@ module cache_test;
           add(s, s, tmp_sum);
 
           add(pb, pb, 2 * N);                 //       pb += N;
-        #1; end                               //     }
+        #2; end                               //     }
         write32(pc + 4 * x, s);               //     pc[x] = s;
 
-      #1; end                                 //   }
+      #2; end                                 //   }
       add(pa, pa, K);                         //   pa += K;
       add(pc, pc, 4 * N);                     //   pc += N;
-    #1; end                                   // }
+    #2; end                                   // }
 
-    #1; // Выход из функции
+    #2; // Выход из функции
     $display("Total time: %0d tacts", $time / 2);
     cache_hit_percentage = cache_hits * 100;
     cache_hit_percentage /= (cache_hits + cache_misses);
     $display("Cache hits: %0d/%0d = %0t%%", cache_hits, cache_hits + cache_misses, cache_hit_percentage);
     $finish;
+
+    // $display();
+    // #10 C_DUMP = 1;
+    // #10 $finish;
   end
 
-  always @(CLK) begin
-    // `log; $display("C1_WIRE = %d, C2_WIRE = %d", C1_WIRE, C2_WIRE);
-  end
+  // initial begin
+  //   #1000 $finish;
+  // end
+
+  // always @(CLK) begin
+  //   `log; $display("C1_WIRE = %d, C2_WIRE = %d", C1_WIRE, C2_WIRE);
+  // end
 endmodule

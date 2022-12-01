@@ -52,7 +52,7 @@ module Cache (
       for (int line = 0; line < CACHE_WAY; ++line) begin
         $write("Line #%0d (%0d): ", line, set * CACHE_WAY + line);
         for (int bbyte = 0; bbyte < CACHE_LINE_SIZE; ++bbyte) $write("%b ", data[set][line][bbyte]);
-        $display("| TAG:%b | V:%d | D:%d", tags[set][line], valid[set][line], dirty[set][line]);
+        $display("| TAG:%b | V:%b | D:%b | LRU:%b", tags[set][line], valid[set][line], dirty[set][line], LRU_bit[set][line]);
       end
       $display();
     end
@@ -78,7 +78,7 @@ module Cache (
   endtask
 
   // Parses A1 bus to A1 parts + finds valid line corresponding to these parts
-  task parse_A1;  // Called on CLK = 1
+  task parse_A1;  // Called on CLK = 1, return: CLK = 1
     req_tag = `discard_last_n_bits(A1_WIRE, CACHE_SET_SIZE);
     req_set = `last_n_bits(A1_WIRE, CACHE_SET_SIZE);
     #2 req_offset = A1_WIRE;
@@ -89,7 +89,8 @@ module Cache (
       if (valid[req_set][test_line] == 1 && tags[req_set][test_line] == req_tag) found_line = test_line;
   endtask
 
-  task read_line_from_MEM(input [CACHE_TAG_SIZE-1:0] tag, input [CACHE_SET_SIZE-1:0] set, input int line);  // Called on CLK = 0
+  task read_line_from_MEM(input [CACHE_TAG_SIZE-1:0] tag, input [CACHE_SET_SIZE-1:0] set, input int line);  // Called on CLK = 0, return: CLK = 1
+    // `log; $display("Reading line from MemCTR");
     tags[req_set][found_line] = req_tag;
 
     C2 = C2_READ_LINE;
@@ -113,7 +114,7 @@ module Cache (
     dirty[set][line] = 0;
   endtask
 
-  task write_line_to_MEM(input [CACHE_SET_SIZE-1:0] set, input int line);  // Called on CLK = 0
+  task write_line_to_MEM(input [CACHE_SET_SIZE-1:0] set, input int line);  // Called on CLK = 0, return: CLK = 1
     C2 = C2_WRITE_LINE;
     A2[CACHE_TAG_SIZE+CACHE_SET_SIZE-1:CACHE_SET_SIZE] = tags[set][line];
     A2[CACHE_SET_SIZE-1:0] = set;
@@ -128,7 +129,7 @@ module Cache (
     // `log; $display("Cache received C2_RESPONSE");
   endtask
 
-  task invalidate_line(input [CACHE_SET_SIZE-1:0] set, input int line);  // Called on CLK = 0
+  task invalidate_line(input [CACHE_SET_SIZE-1:0] set, input int line);  // Called on CLK = 0, return: CLK = 1
     // $display("Invalidating line: set = %b, line = %0d | D: %0d", set, line, dirty[set][line]);
     // Если линия Dirty, то нужно сдампить её содержимое в Mem
     if (dirty[set][line]) write_line_to_MEM(set, line);
@@ -137,7 +138,7 @@ module Cache (
     valid[set][line] = 0;
   endtask
 
-  task find_spare_line;  // Called on CLK = 0
+  task find_spare_line;  // Called on CLK = 0, return: CLK = 1
     // Сначала ищем пустую линию
     for (int test_line = 0; test_line < CACHE_WAY; ++test_line)
       if (valid[req_set][test_line] == 0) found_line = test_line;
@@ -148,6 +149,8 @@ module Cache (
         if (LRU_bit[req_set][test_line] == 0) found_line = test_line;
 
       invalidate_line(req_set, found_line);
+    end else begin
+      #1;  // TODO
     end
   endtask
 
