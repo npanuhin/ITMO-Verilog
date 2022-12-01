@@ -54,10 +54,10 @@ module test;
   reg[CACHE_OFFSET_SIZE-1:0] offset;
   reg[CACHE_ADDR_SIZE-1:0] address;
 
-  task send_bytes_D1(input [7:0] bbyte1, input [7:0] bbyte2);
-    $display("[%3t | CLK=%0d] CPU: Sending byte: %d = %b", $time, $time % 2, bbyte1, bbyte1);
-    $display("[%3t | CLK=%0d] CPU: Sending byte: %d = %b", $time, $time % 2, bbyte2, bbyte2);
-    D1[15:8] = bbyte2; D1[7:0] = bbyte1;
+  task send_bytes_D1(input [7:0] byte1, input [7:0] byte2);
+    $display("[%3t | CLK=%0d] CPU: Sending byte: %d = %b", $time, $time % 2, byte1, byte1);
+    $display("[%3t | CLK=%0d] CPU: Sending byte: %d = %b", $time, $time % 2, byte2, byte2);
+    D1[15:8] = byte2; D1[7:0] = byte1;
   endtask
   task receive_bytes_D1;
     $display("[%3t | CLK=%0d] CPU: Received byte: %d = %b", $time, $time % 2, D1_WIRE[7:0], D1_WIRE[7:0]);

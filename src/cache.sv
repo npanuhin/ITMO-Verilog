@@ -1,13 +1,13 @@
 module Cache (
-  input wire CLK,
-  inout wire[ADDR1_BUS_SIZE-1:0] A1_WIRE,
-  inout wire[DATA_BUS_SIZE-1:0] D1_WIRE,
-  inout wire[CTR1_BUS_SIZE-1 :0] C1_WIRE,
-  inout wire[ADDR2_BUS_SIZE-1:0] A2_WIRE,
-  inout wire[DATA_BUS_SIZE-1:0] D2_WIRE,
-  inout wire[CTR2_BUS_SIZE-1 :0] C2_WIRE,
-  input wire RESET,
-  input wire C_DUMP
+  input CLK,
+  inout[ADDR1_BUS_SIZE-1:0] A1_WIRE,
+  inout[DATA_BUS_SIZE-1:0] D1_WIRE,
+  inout[CTR1_BUS_SIZE-1 :0] C1_WIRE,
+  inout[ADDR2_BUS_SIZE-1:0] A2_WIRE,
+  inout[DATA_BUS_SIZE-1:0] D2_WIRE,
+  inout[CTR2_BUS_SIZE-1 :0] C2_WIRE,
+  input RESET,
+  input C_DUMP
 );
   `map_bus1; `map_bus2;  // Initialize wires
 
@@ -29,31 +29,30 @@ module Cache (
   int found_line;
 
   // Initialization & RESET
-  task reset_line(int cur_set, int cur_line);
-    LRU_bit[cur_set][cur_line] = 0;
-    valid[cur_set][cur_line] = 1;  // For testing, should be 0
-    dirty[cur_set][cur_line] = 1;  // For testing, should be 0
-    tags[cur_set][cur_line] = 0;   // For testing, should be 'x
+  task reset_line(int set, int line);
+    LRU_bit[set][line] = 0;
+    valid[set][line] = 1;  // For testing, should be 0
+    dirty[set][line] = 1;  // For testing, should be 0
+    tags[set][line] = 0;   // For testing, should be 'x
     for (int bbyte = 0; bbyte < CACHE_LINE_SIZE; ++bbyte)  // Optional
-      data[cur_set][cur_line][bbyte] = $random(SEED) >> 16;  // For testing, should be 'x
+      data[set][line][bbyte] = $random(SEED) >> 16;  // For testing, should be 'x
   endtask
   task reset;
-    for (int cur_set = 0; cur_set < CACHE_SETS_COUNT; ++cur_set)
-      for (int cur_line = 0; cur_line < CACHE_WAY; ++cur_line)
-        reset_line(cur_set, cur_line);
+    for (int set = 0; set < CACHE_SETS_COUNT; ++set)
+      for (int line = 0; line < CACHE_WAY; ++line)
+        reset_line(set, line);
   endtask
   initial reset();
   always @(posedge RESET) reset();
 
   // Dumping
   always @(posedge C_DUMP)
-    for (int cur_set = 0; cur_set < CACHE_SETS_COUNT; ++cur_set) begin
-      $display("Set #%0d", cur_set);
-      for (int found_line = 0; found_line < CACHE_WAY; ++found_line) begin
-        $write("Line #%0d (%0d): ", found_line, cur_set * CACHE_WAY + found_line);
-        for (int bbyte = 0; bbyte < CACHE_LINE_SIZE; ++bbyte)
-          $write("%b ", data[cur_set][found_line][bbyte]);
-        $display("| TAG:%b | V:%d | D:%d", tags[cur_set][found_line], valid[cur_set][found_line], dirty[cur_set][found_line]);
+    for (int set = 0; set < CACHE_SETS_COUNT; ++set) begin
+      $display("Set #%0d", set);
+      for (int line = 0; line < CACHE_WAY; ++line) begin
+        $write("Line #%0d (%0d): ", line, set * CACHE_WAY + line);
+        for (int bbyte = 0; bbyte < CACHE_LINE_SIZE; ++bbyte) $write("%b ", data[set][line][bbyte]);
+        $display("| TAG:%b | V:%d | D:%d", tags[set][line], valid[set][line], dirty[set][line]);
       end
       $display();
     end
@@ -61,21 +60,21 @@ module Cache (
   // --------------------------------------------------- Main logic ----------------------------------------------------
   // Передаём и получаем данные в little-endian, то есть вначале (слева) идёт второй байт ([15:8]), потом (справа) первый ([7:0])
   // Тогда D = (второй байт, первый байт) -> второй байт = D2[15:8], первый байт = D2[7:0]
-  task send_bytes_D1(input [7:0] bbyte1, input [7:0] bbyte2);
-    $display("[%3t | CLK=%0d] Cache: Sending byte: %d = %b", $time, $time % 2, bbyte1, bbyte1);
-    $display("[%3t | CLK=%0d] Cache: Sending byte: %d = %b", $time, $time % 2, bbyte2, bbyte2);
-    D1[15:8] = bbyte2; D1[7:0] = bbyte1;
+  task send_bytes_D1(input [7:0] byte1, input [7:0] byte2);
+    $display("[%3t | CLK=%0d] Cache: Sending byte: %d = %b", $time, $time % 2, byte1, byte1);
+    $display("[%3t | CLK=%0d] Cache: Sending byte: %d = %b", $time, $time % 2, byte2, byte2);
+    D1[15:8] = byte2; D1[7:0] = byte1;
   endtask
-  task send_bytes_D2(input [7:0] bbyte1, input [7:0] bbyte2);
-    $display("[%3t | CLK=%0d] Cache: Sending byte: %d = %b", $time, $time % 2, bbyte1, bbyte1);
-    $display("[%3t | CLK=%0d] Cache: Sending byte: %d = %b", $time, $time % 2, bbyte2, bbyte2);
-    D2[15:8] = bbyte2; D2[7:0] = bbyte1;
+  task send_bytes_D2(input [7:0] byte1, input [7:0] byte2);
+    $display("[%3t | CLK=%0d] Cache: Sending byte: %d = %b", $time, $time % 2, byte1, byte1);
+    $display("[%3t | CLK=%0d] Cache: Sending byte: %d = %b", $time, $time % 2, byte2, byte2);
+    D2[15:8] = byte2; D2[7:0] = byte1;
   endtask
-  task receive_bytes_D1(output [7:0] bbyte1, output [7:0] bbyte2);
-    bbyte2 = D1_WIRE[15:8]; bbyte1 = D1_WIRE[7:0];
+  task receive_bytes_D1(output [7:0] byte1, output [7:0] byte2);
+    byte2 = D1_WIRE[15:8]; byte1 = D1_WIRE[7:0];
   endtask
-  task receive_bytes_D2(output [7:0] bbyte1, output [7:0] bbyte2);
-    bbyte2 = D2_WIRE[15:8]; bbyte1 = D2_WIRE[7:0];
+  task receive_bytes_D2(output [7:0] byte1, output [7:0] byte2);
+    byte2 = D2_WIRE[15:8]; byte1 = D2_WIRE[7:0];
   endtask
 
   // Parses A1 bus to A1 parts + finds valid line corresponding to these parts
@@ -100,17 +99,17 @@ module Cache (
     wait(CLK == 1 && C2_WIRE == C2_RESPONSE);
     $display("[%3t | CLK=%0d] Cache received C2_RESPONSE", $time, $time % 2);
 
-    for (int bbytes_start = 0; bbytes_start < CACHE_LINE_SIZE; bbytes_start += 2) begin
-      receive_bytes_D2(data[set][line][bbytes_start], data[set][line][bbytes_start + 1]);
+    for (int bytes_start = 0; bytes_start < CACHE_LINE_SIZE; bytes_start += 2) begin
+      receive_bytes_D2(data[set][line][bytes_start], data[set][line][bytes_start + 1]);
       $display(
         "[%3t | CLK=%0d] Cache: Wrote byte %d = %b to data[%0d][%0d][%0d]", $time, $time % 2,
-        data[set][line][bbytes_start], data[set][line][bbytes_start], set, line, bbytes_start
+        data[set][line][bytes_start], data[set][line][bytes_start], set, line, bytes_start
       );
       $display(
         "[%3t | CLK=%0d] Cache: Wrote byte %d = %b to data[%0d][%0d][%0d]", $time, $time % 2,
-        data[set][line][bbytes_start + 1], data[set][line][bbytes_start + 1], set, line, bbytes_start + 1
+        data[set][line][bytes_start + 1], data[set][line][bytes_start + 1], set, line, bytes_start + 1
       );
-      if (bbytes_start + 2 < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
+      if (bytes_start + 2 < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
     end
     valid[set][line] = 1;
     dirty[set][line] = 0;
@@ -121,9 +120,9 @@ module Cache (
     A2[CACHE_TAG_SIZE+CACHE_SET_SIZE-1:CACHE_SET_SIZE] = tags[set][line];
     A2[CACHE_SET_SIZE-1:0] = set;
 
-    for (int bbytes_start = 0; bbytes_start < CACHE_LINE_SIZE; bbytes_start += 2) begin
-      send_bytes_D2(data[set][line][bbytes_start], data[set][line][bbytes_start + 1]);
-      if (bbytes_start + 2 < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
+    for (int bytes_start = 0; bytes_start < CACHE_LINE_SIZE; bytes_start += 2) begin
+      send_bytes_D2(data[set][line][bytes_start], data[set][line][bytes_start + 1]);
+      if (bytes_start + 2 < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
     end
 
     #1 `close_bus2;

@@ -1,10 +1,10 @@
 module MemCTR (
-  input wire CLK,
-  inout wire[ADDR2_BUS_SIZE-1:0] A2_WIRE,
-  inout wire[DATA_BUS_SIZE-1:0] D2_WIRE,
-  inout wire[CTR2_BUS_SIZE-1 :0] C2_WIRE,
-  input wire RESET,
-  input wire M_DUMP
+  input CLK,
+  inout[ADDR2_BUS_SIZE-1:0] A2_WIRE,
+  inout[DATA_BUS_SIZE-1:0] D2_WIRE,
+  inout[CTR2_BUS_SIZE-1 :0] C2_WIRE,
+  input RESET,
+  input M_DUMP
 );
   `map_bus2;  // Initialize wires
 
@@ -28,17 +28,17 @@ module MemCTR (
 
   // Dumping
   always @(posedge M_DUMP)
-    for (int cur_byte = 0; cur_byte < 100; ++cur_byte)  // 100 for testing, should be MEM_SIZE
-      $display("Byte %2d: %d = %b", cur_byte, ram[cur_byte], ram[cur_byte]);
+    for (int i = 0; i < 100; ++i)  // 100 for testing, should be MEM_SIZE
+      $display("Byte %2d: %d = %b", i, ram[i], ram[i]);
 
   // --------------------------------------------------- Main logic ----------------------------------------------------
-  task send_bytes_D2(input [7:0] bbyte1, input [7:0] bbyte2);
-    // $display("[%3t | CLK=%0d] MemCTR: Sending byte: %d = %b", $time, $time % 2, bbyte1, bbyte1);
-    // $display("[%3t | CLK=%0d] MemCTR: Sending byte: %d = %b", $time, $time % 2, bbyte2, bbyte2);
-    D2[15:8] = bbyte2; D2[7:0] = bbyte1;
+  task send_bytes_D2(input [7:0] byte1, input [7:0] byte2);
+    // $display("[%3t | CLK=%0d] MemCTR: Sending byte: %d = %b", $time, $time % 2, byte1, byte1);
+    // $display("[%3t | CLK=%0d] MemCTR: Sending byte: %d = %b", $time, $time % 2, byte2, byte2);
+    D2[15:8] = byte2; D2[7:0] = byte1;
   endtask
-  task receive_bytes_D2(output [7:0] bbyte1, output [7:0] bbyte2);
-    bbyte2 = D2_WIRE[15:8]; bbyte1 = D2_WIRE[7:0];
+  task receive_bytes_D2(output [7:0] byte1, output [7:0] byte2);
+    byte2 = D2_WIRE[15:8]; byte1 = D2_WIRE[7:0];
   endtask
 
   task parse_A2;
@@ -58,13 +58,13 @@ module MemCTR (
 
         #1 C2 = C2_RESPONSE;
         $display("[%3t | CLK=%0d] MemCTR: Sending C2_RESPONSE", $time, $time % 2);
-        for (int bbytes_start = 0; bbytes_start < CACHE_LINE_SIZE; bbytes_start += 2) begin
+        for (int bytes_start = 0; bytes_start < CACHE_LINE_SIZE; bytes_start += 2) begin
           send_bytes_D2(ram[address], ram[address + 1]);
           $display("[%3t | CLK=%0d] MemCTR: Sent byte %d = %b from ram[%b]", $time, $time % 2, ram[address], ram[address], address);
           ++address;
           $display("[%3t | CLK=%0d] MemCTR: Sent byte %d = %b from ram[%b]", $time, $time % 2, ram[address], ram[address], address);
           ++address;
-          if (bbytes_start + 2 < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
+          if (bytes_start + 2 < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
         end
         #2 `close_bus2; listening_bus2 = 1;
       end
@@ -75,13 +75,13 @@ module MemCTR (
         fork
           #(MEM_CTR_DELAY - 2);  // С одной стороны ждём MEM_CTR_DELAY тактов до отправки C2_RESPONSE, а с другой параллельно читаем и пишем данные
           begin
-            for (int bbytes_start = 0; bbytes_start < CACHE_LINE_SIZE; bbytes_start += 2) begin
+            for (int bytes_start = 0; bytes_start < CACHE_LINE_SIZE; bytes_start += 2) begin
               receive_bytes_D2(ram[address], ram[address + 1]);
               $display("[%3t | CLK=%0d] MemCTR: Wrote byte %d = %b to ram[%b]", $time, $time % 2, ram[address], ram[address], address);
               ++address;
               $display("[%3t | CLK=%0d] MemCTR: Wrote byte %d = %b to ram[%b]", $time, $time % 2, ram[address], ram[address], address);
               ++address;
-              if (bbytes_start + 2 < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
+              if (bytes_start + 2 < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
             end
 
             C2 = C2_NOP;
