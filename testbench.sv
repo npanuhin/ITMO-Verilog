@@ -137,12 +137,12 @@ module cache_test;
       `log; $display("<Sending C1 and first half of A1>");
       C1 = C1_WRITE32;
       A1 = `discard_last_n_bits(address, CACHE_OFFSET_SIZE);
-      D1[15:7] = 200; D1[7:0] = 124;
+      D1[15:8] = 200; D1[7:0] = 124;
       #2
       // Передача второй части адреса и второй части данных
       `log; $display("<Sending second half of A1>");
       A1 = `last_n_bits(address, CACHE_OFFSET_SIZE);
-      D1[15:7] = 37; D1[7:0] = 5;
+      D1[15:8] = 37; D1[7:0] = 5;
       #2
       // Завершение взаимодействия
       `log; $display("<Finished sending>");

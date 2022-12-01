@@ -138,11 +138,11 @@ module Cache (
   endtask
 
   task find_spare_line;  // Called on CLK = 0
-    // Сначала ищем не занятую
+    // Сначала ищем пустую линию
     for (int test_line = 0; test_line < CACHE_WAY; ++test_line)
       if (valid[req_set][test_line] == 0) found_line = test_line;
 
-    // Если таковой не нашлось, то по LRU берём самую давнюю (LRU_bit = 0) и инвалидируем
+    // Если таковой не нашлось, то по LRU берём самую давнюю занятую (LRU_bit = 0) и инвалидируем
     if (found_line == -1) begin
       for (int test_line = 0; test_line < CACHE_WAY; ++test_line)
         if (LRU_bit[req_set][test_line] == 0) found_line = test_line;
@@ -155,17 +155,15 @@ module Cache (
     `log; $display("Cache: C1_READ%0d, A1 = %b", read_bits, A1_WIRE);
     listening_bus1 = 0; parse_A1();
 
+    #1 C1 = C1_NOP;
     if (found_line == -1) begin
       $display("Line not found, finding spare one");
-      #1 C1 = C1_NOP;
       #(CACHE_MISS_DELAY - 4);
-
       find_spare_line();
       #1 read_line_from_MEM(req_tag, req_set, found_line);
 
     end else begin
       $display("Found line #%0d", found_line);
-      #1 C1 = C1_NOP;
       #(CACHE_HIT_DELAY - 5);
     end
 
@@ -188,9 +186,7 @@ module Cache (
     `log; $display("Cache: C1_WRITE%0d, A1 = %b", write_bits, A1_WIRE);
     listening_bus1 = 0;
 
-    // WARNING, UNTESTED, TODO
-
-    fork
+    fork  // duration: 2 tacks
       parse_A1();
       case (write_bits)
         8:  receive_bytes_D1(write_buffer[0], write_buffer[1]);  // Second byte is just a placeholder
@@ -202,26 +198,33 @@ module Cache (
       endcase
     join
 
+    #1 C1 = C1_NOP;
     if (found_line == -1) begin
       $display("Line not found, finding spare one");
-      // TODO
+      #(CACHE_MISS_DELAY - 4);
+      find_spare_line();
+      #1 read_line_from_MEM(req_tag, req_set, found_line);
+      // TODO here, see report
+      #1 C1 = C1_RESPONSE;
+
     end else begin
       $display("Found line #%0d", found_line);
-      #1 C1 = C1_NOP;
       #(CACHE_HIT_DELAY - 5);
+      #1 C1 = C1_RESPONSE;
     end
+
+    dirty[req_set][found_line] = 1;
 
     LRU_bit[req_set][found_line] = 1;
     LRU_bit[req_set][!found_line] = 0;
 
-    for (int i = 0; i < 8; i += 1) begin
+    for (int i = 0; i < write_bits / 8; i += 1) begin
       data[req_set][found_line][req_offset + i] = write_buffer[i];
       `log; $display("Cache: Wrote byte %d = %b to data[%0d][%0d][%0d]",
         write_buffer[i], write_buffer[i], req_set, found_line, req_offset + i
       );
     end
 
-    #1 C1 = C1_RESPONSE;
     #2 `close_bus1; listening_bus1 = 1;
   endtask
 
