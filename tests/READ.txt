@@ -563,4 +563,4 @@ Found line #1
 [454 | CLK=0] C1_WIRE = z, C2_WIRE = z
 [455 | CLK=1] C1_WIRE = z, C2_WIRE = z
 [456 | CLK=0] C1_WIRE = z, C2_WIRE = z
-testbench.sv:129: $finish called at 457 (1s)
+testbench.sv:163: $finish called at 457 (1s)

@@ -19,4 +19,4 @@ Line not found
 [  9 | CLK=1] CPU received C1_RESPONSE
 [ 10 | CLK=0] C1_WIRE = z, C2_WIRE = z
 [ 11 | CLK=1] C1_WIRE = z, C2_WIRE = z
-testbench.sv:129: $finish called at 12 (1s)
+testbench.sv:163: $finish called at 12 (1s)

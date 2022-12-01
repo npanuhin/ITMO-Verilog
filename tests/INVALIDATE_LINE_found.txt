@@ -253,4 +253,4 @@ Invalidating line: set = 00010, line = 1 | D: 1
 [207 | CLK=1] CPU received C1_RESPONSE
 [208 | CLK=0] C1_WIRE = z, C2_WIRE = z
 [209 | CLK=1] C1_WIRE = z, C2_WIRE = z
-testbench.sv:129: $finish called at 210 (1s)
+testbench.sv:163: $finish called at 210 (1s)

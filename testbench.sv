@@ -6,8 +6,8 @@
 `define first_n_bits(register, n) `discard_last_n_bits(register, $size(register) - n)
 `define last_n_bits(register, n) (register & ((1 << n) - 1))
 
-// This CLK representation works much better, more suitable for debugging
-// `define CLKP $time % 2
+// CLK = $time % 2 representation works much better, more suitable for debugging
+`define log $write("[%3t | CLK=%0d] ", $time, $time % 2);
 
 // BUSes
 `define map_bus1 \
@@ -30,7 +30,7 @@
 //     $finish; \
 //   end
 
-module test;
+module cache_test;
   reg CLK = 0,
       RESET = 0,
       C_DUMP = 0,
@@ -41,9 +41,9 @@ module test;
   wire[ADDR2_BUS_SIZE-1:0] A2_WIRE;
   wire[DATA_BUS_SIZE-1:0] D1_WIRE;
   wire[DATA_BUS_SIZE-1:0] D2_WIRE;
-  wire[CTR1_BUS_SIZE-1 :0] C1_WIRE;
-  wire[CTR2_BUS_SIZE-1 :0] C2_WIRE;
-  `map_bus1; `map_bus2;
+  wire[CTR1_BUS_SIZE-1:0] C1_WIRE;
+  wire[CTR2_BUS_SIZE-1:0] C2_WIRE;
+  `map_bus1;  // Initialize wires
 
   Cache Cache_instance(CLK, A1_WIRE, D1_WIRE, C1_WIRE, A2_WIRE, D2_WIRE, C2_WIRE, RESET, C_DUMP);
   MemCTR Mem_instance(CLK, A2_WIRE, D2_WIRE, C2_WIRE, RESET, M_DUMP);
@@ -53,21 +53,20 @@ module test;
   reg[CACHE_SET_SIZE-1:0] set;
   reg[CACHE_OFFSET_SIZE-1:0] offset;
   reg[CACHE_ADDR_SIZE-1:0] address;
-
   task send_bytes_D1(input [7:0] byte1, input [7:0] byte2);
-    $display("[%3t | CLK=%0d] CPU: Sending byte: %d = %b", $time, $time % 2, byte1, byte1);
-    $display("[%3t | CLK=%0d] CPU: Sending byte: %d = %b", $time, $time % 2, byte2, byte2);
+    `log; $display("CPU: Sending byte: %d = %b", byte1, byte1);
+    `log; $display("CPU: Sending byte: %d = %b", byte2, byte2);
     D1[15:8] = byte2; D1[7:0] = byte1;
   endtask
   task receive_bytes_D1;
-    $display("[%3t | CLK=%0d] CPU: Received byte: %d = %b", $time, $time % 2, D1_WIRE[7:0], D1_WIRE[7:0]);
-    $display("[%3t | CLK=%0d] CPU: Received byte: %d = %b", $time, $time % 2, D1_WIRE[15:8], D1_WIRE[15:8]);
+    `log; $display("CPU: Received byte: %d = %b", D1_WIRE[7:0], D1_WIRE[7:0]);
+    `log; $display("CPU: Received byte: %d = %b", D1_WIRE[15:8], D1_WIRE[15:8]);
   endtask
 
   initial begin
     // $dumpfile("dump.vcd"); $dumpvars;
     // -------------------------------------------- Test C1_INVALIDATE_LINE --------------------------------------------
-    // tag = 0;
+    // tag = 1;
     // set = 2;
     // offset = 3;
     // address = tag;
@@ -75,20 +74,20 @@ module test;
     // $display("Testbench: sending C1_INVALIDATE_LINE, A1 = %b|%b|%b\n", tag, set, offset);
 
     // // Передача команды и первой части адреса
-    // $display("[%3t | CLK=%0d] <Sending C1 and first half of A1>", $time, $time % 2);
+    // `log; $display("<Sending C1 and first half of A1>");
     // C1 = C1_INVALIDATE_LINE;
     // A1 = `discard_last_n_bits(address, CACHE_OFFSET_SIZE);
     // #2;
     // // Передача второй части адреса
-    // $display("[%3t | CLK=%0d] <Sending second half of A1>", $time, $time % 2);
+    // `log; $display("<Sending second half of A1>");
     // A1 = `last_n_bits(address, CACHE_OFFSET_SIZE);
     // #2;
     // // Завершение взаимодействия
-    // $display("[%3t | CLK=%0d] <Finished sending>", $time, $time % 2);
+    // `log; $display("<Finished sending>");
     // `close_bus1;
 
     // wait(CLK == 1 && C1_WIRE == C1_RESPONSE);
-    // $display("[%3t | CLK=%0d] CPU received C1_RESPONSE", $time, $time % 2);
+    // `log; $display("CPU received C1_RESPONSE");
 
     // ---------------------------------------------- Test C1_READ8/16/32 ----------------------------------------------
     // tag = 1;
@@ -101,20 +100,20 @@ module test;
     // // Прочитаем один и те же данные два раза - во второй раз не должно быть похода в память
     // for (int iteration = 0; iteration < 2; ++iteration) begin
     //   // Передача команды и первой части адреса
-    //   $display("[%3t | CLK=%0d] <Sending C1 and first half of A1>", $time, $time % 2);
+    //   `log; $display("<Sending C1 and first half of A1>");
     //   C1 = C1_READ32;
     //   A1 = `discard_last_n_bits(address, CACHE_OFFSET_SIZE);
     //   #2
     //   // Передача второй части адреса
-    //   $display("[%3t | CLK=%0d] <Sending second half of A1>", $time, $time % 2);
+    //   `log; $display("<Sending second half of A1>");
     //   A1 = `last_n_bits(address, CACHE_OFFSET_SIZE);
     //   #2
     //   // Завершение взаимодействия
-    //   $display("[%3t | CLK=%0d] <Finished sending>", $time, $time % 2);
+    //   `log; $display("<Finished sending>");
     //   `close_bus1;
 
     //   wait(CLK == 1 && C1_WIRE == C1_RESPONSE);
-    //   $display("[%3t | CLK=%0d] CPU received C1_RESPONSE", $time, $time % 2);
+    //   `log; $display("CPU received C1_RESPONSE");
 
     //   for (int bbytes_start = 0; bbytes_start < 32 / 8; bbytes_start += 2) begin
     //     receive_bytes_D1();
@@ -135,22 +134,22 @@ module test;
     // Прочитаем один и те же данные два раза - во второй раз не должно быть похода в память
     for (int iteration = 0; iteration < 2; ++iteration) begin
       // Передача команды, первой части адреса и первой части данных
-      $display("[%3t | CLK=%0d] <Sending C1 and first half of A1>", $time, $time % 2);
+      `log; $display("<Sending C1 and first half of A1>");
       C1 = C1_WRITE32;
       A1 = `discard_last_n_bits(address, CACHE_OFFSET_SIZE);
       D1[15:7] = 200; D1[7:0] = 124;
       #2
       // Передача второй части адреса и второй части данных
-      $display("[%3t | CLK=%0d] <Sending second half of A1>", $time, $time % 2);
+      `log; $display("<Sending second half of A1>");
       A1 = `last_n_bits(address, CACHE_OFFSET_SIZE);
       D1[15:7] = 37; D1[7:0] = 5;
       #2
       // Завершение взаимодействия
-      $display("[%3t | CLK=%0d] <Finished sending>", $time, $time % 2);
+      `log; $display("<Finished sending>");
       `close_bus1;
 
       wait(CLK == 1 && C1_WIRE == C1_RESPONSE);
-      $display("[%3t | CLK=%0d] CPU received C1_RESPONSE", $time, $time % 2);
+      `log; $display("CPU received C1_RESPONSE");
 
       $display("\n---------- Iteration %0d finished ----------\n", iteration);
       #3;
@@ -164,6 +163,7 @@ module test;
     #3 $finish;
   end
 
-  always @(CLK)
-    $display("[%3t | CLK=%0d] C1_WIRE = %d, C2_WIRE = %d", $time, $time % 2, C1_WIRE, C2_WIRE);
+  always @(CLK) begin
+    `log; $display("C1_WIRE = %d, C2_WIRE = %d", C1_WIRE, C2_WIRE);
+  end
 endmodule
