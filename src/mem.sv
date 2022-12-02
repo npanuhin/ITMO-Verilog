@@ -33,8 +33,6 @@ module MemCTR (
 
   // --------------------------------------------------- Main logic ----------------------------------------------------
   task send_bytes_D2(input [7:0] byte1, input [7:0] byte2);
-    `log $display("MemCTR: Sending byte: %d = %b", byte1, byte1);
-    `log $display("MemCTR: Sending byte: %d = %b", byte2, byte2);
     D2[15:8] = byte2; D2[7:0] = byte1;
   endtask
   task receive_bytes_D2(output [7:0] byte1, output [7:0] byte2);

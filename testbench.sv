@@ -36,24 +36,24 @@ module cache_test;
   endtask
 
   // For testing
-  // reg[CACHE_TAG_SIZE-1:0] tag;
-  // reg[CACHE_SET_SIZE-1:0] set;
-  // reg[CACHE_OFFSET_SIZE-1:0] offset;
-  // reg[CACHE_ADDR_SIZE-1:0] address;
-  // task send_bytes_D1(input [7:0] byte1, input [7:0] byte2);
-  //   `log $display("CPU: Sending byte: %d = %b", byte1, byte1);
-  //   `log $display("CPU: Sending byte: %d = %b", byte2, byte2);
-  //   D1[15:8] = byte2; D1[7:0] = byte1;
-  // endtask
-  // task receive_bytes_D1;
-  //   `log $display("CPU: Received byte: %d = %b", D1_WIRE[7:0], D1_WIRE[7:0]);
-  //   `log $display("CPU: Received byte: %d = %b", D1_WIRE[15:8], D1_WIRE[15:8]);
-  // endtask
+  reg[CACHE_TAG_SIZE-1:0] tag;
+  reg[CACHE_SET_SIZE-1:0] set;
+  reg[CACHE_OFFSET_SIZE-1:0] offset;
+  reg[CACHE_ADDR_SIZE-1:0] address;
+  task send_bytes_D1(input [7:0] byte1, input [7:0] byte2);
+    `log $display("CPU: Sending byte: %d = %b", byte1, byte1);
+    `log $display("CPU: Sending byte: %d = %b", byte2, byte2);
+    D1[15:8] = byte2; D1[7:0] = byte1;
+  endtask
+  task receive_bytes_D1;
+    `log $display("CPU: Received byte: %d = %b", D1_WIRE[7:0], D1_WIRE[7:0]);
+    `log $display("CPU: Received byte: %d = %b", D1_WIRE[15:8], D1_WIRE[15:8]);
+  endtask
 
   // initial begin
     // $dumpfile("dump.vcd"); $dumpvars;
     // -------------------------------------------- Test C1_INVALIDATE_LINE --------------------------------------------
-    // tag = 1;
+    // tag = 1;  // 0 — found, 1 — not found
     // set = 2;
     // offset = 3;
     // address = tag;
@@ -90,9 +90,7 @@ module cache_test;
     //   // Передача второй части адреса
     //   `log $display("<Sending second half of A1>");
     //   A1 = `last_n_bits(address, CACHE_OFFSET_SIZE);
-    //   #2
     //   // Завершение взаимодействия
-    //   `log $display("<Finished sending>");
     //   wait_response();
     //   `log $display("CPU received C1_RESPONSE");
 
@@ -124,9 +122,7 @@ module cache_test;
     //   `log $display("<Sending second half of A1>");
     //   A1 = `last_n_bits(address, CACHE_OFFSET_SIZE);
     //   D1[15:8] = 37; D1[7:0] = 5;
-    //   #2
     //   // Завершение взаимодействия
-    //   `log $display("<Finished sending>");
     //   wait_response();
     //   `log $display("CPU received C1_RESPONSE");
 

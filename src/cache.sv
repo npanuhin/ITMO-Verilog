@@ -31,11 +31,11 @@ module Cache (
   // Initialization & RESET
   task reset_line(int set, int line);
     LRU_bit[set][line] = 0;
-    valid[set][line] = 0;  // For testing, should be 0
-    dirty[set][line] = 0;  // For testing, should be 0
-    tags[set][line] = 'x;  // For testing, should be 'x
+    valid[set][line] = DEBUG_MODE ? 1 : 0;
+    dirty[set][line] = DEBUG_MODE ? 1 : 0;
+    tags[set][line] = DEBUG_MODE ? 0 :'x;
     for (int bbyte = 0; bbyte < CACHE_LINE_SIZE; ++bbyte)  // Optional
-      data[set][line][bbyte] = 'x;  // For testing, should be 'x
+      data[set][line][bbyte] = DEBUG_MODE ? ($random(SEED) >> 16) : 'x;
   endtask
   task reset;
     for (int set = 0; set < CACHE_SETS_COUNT; ++set)

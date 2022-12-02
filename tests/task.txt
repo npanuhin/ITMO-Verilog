@@ -1,3 +1,3 @@
 Total time: 4768833 tacts
 Cache hits: 228210/249600 = 91.43%
-testbench.sv:245: $finish called at 9537666 (1s)
+testbench.sv:241: $finish called at 9537666 (1s)
