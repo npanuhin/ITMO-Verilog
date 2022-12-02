@@ -33,8 +33,8 @@ module MemCTR (
 
   // --------------------------------------------------- Main logic ----------------------------------------------------
   task send_bytes_D2(input [7:0] byte1, input [7:0] byte2);
-    // `log; $display("MemCTR: Sending byte: %d = %b", byte1, byte1);
-    // `log; $display("MemCTR: Sending byte: %d = %b", byte2, byte2);
+    `log $display("MemCTR: Sending byte: %d = %b", byte1, byte1);
+    `log $display("MemCTR: Sending byte: %d = %b", byte2, byte2);
     D2[15:8] = byte2; D2[7:0] = byte1;
   endtask
   task receive_bytes_D2(output [7:0] byte1, output [7:0] byte2);
@@ -47,22 +47,22 @@ module MemCTR (
 
   always @(posedge CLK) begin
     if (listening_bus2) case (C2_WIRE)
-      // C2_NOP: begin `log; $display("MemCTR: C2_NOP"); end
+      C2_NOP: begin `log $display("MemCTR: C2_NOP"); end
 
       C2_READ_LINE: begin
-        // `log; $display("MemCTR: C2_READ_LINE, A2 = %b", A2_WIRE);
+        `log $display("MemCTR: C2_READ_LINE, A2 = %b", A2_WIRE);
         listening_bus2 = 0; parse_A2();
         #1 C2 = C2_NOP;
 
         #(MEM_CTR_DELAY - 3);
 
         #1 C2 = C2_RESPONSE;
-        // `log; $display("MemCTR: Sending C2_RESPONSE");
+        `log $display("MemCTR: Sending C2_RESPONSE");
         for (int bytes_start = 0; bytes_start < CACHE_LINE_SIZE; bytes_start += 2) begin
           send_bytes_D2(ram[address], ram[address + 1]);
-          // `log; $display("MemCTR: Sent byte %d = %b from ram[%b]", ram[address], ram[address], address);
+          `log $display("MemCTR: Sent byte %d = %b from ram[%b]", ram[address], ram[address], address);
           ++address;
-          // `log; $display("MemCTR: Sent byte %d = %b from ram[%b]", ram[address], ram[address], address);
+          `log $display("MemCTR: Sent byte %d = %b from ram[%b]", ram[address], ram[address], address);
           ++address;
           if (bytes_start + 2 < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
         end
@@ -70,16 +70,16 @@ module MemCTR (
       end
 
       C2_WRITE_LINE: begin
-        // `log; $display("MemCTR: C2_WRITE_LINE, A2 = %b", A2_WIRE);
+        `log $display("MemCTR: C2_WRITE_LINE, A2 = %b", A2_WIRE);
         listening_bus2 = 0; parse_A2();
         fork
           #(MEM_CTR_DELAY - 2);  // С одной стороны ждём MEM_CTR_DELAY тактов до отправки C2_RESPONSE, а с другой параллельно читаем и пишем данные
           begin
             for (int bytes_start = 0; bytes_start < CACHE_LINE_SIZE; bytes_start += 2) begin
               receive_bytes_D2(ram[address], ram[address + 1]);
-              // `log; $display("MemCTR: Wrote byte %d = %b to ram[%b]", ram[address], ram[address], address);
+              `log $display("MemCTR: Wrote byte %d = %b to ram[%b]", ram[address], ram[address], address);
               ++address;
-              // `log; $display("MemCTR: Wrote byte %d = %b to ram[%b]", ram[address], ram[address], address);
+              `log $display("MemCTR: Wrote byte %d = %b to ram[%b]", ram[address], ram[address], address);
               ++address;
               if (bytes_start + 2 < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
             end
@@ -89,7 +89,7 @@ module MemCTR (
         join
 
         #1 C2 = C2_RESPONSE;
-        // `log; $display("MemCTR: Sending C2_RESPONSE");
+        `log $display("MemCTR: Sending C2_RESPONSE");
         #2 `close_bus2; listening_bus2 = 1;
       end
     endcase

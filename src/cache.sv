@@ -61,13 +61,13 @@ module Cache (
   // Передаём и получаем данные в little-endian, то есть вначале (слева) идёт второй байт ([15:8]), потом (справа) первый ([7:0])
   // Тогда D = (второй байт, первый байт) -> второй байт = D2[15:8], первый байт = D2[7:0]
   task send_bytes_D1(input [7:0] byte1, input [7:0] byte2);
-    // `log; $display("Cache: Sending byte: %d = %b", byte1, byte1);
-    // `log; $display("Cache: Sending byte: %d = %b", byte2, byte2);
+    `log $display("Cache: Sending byte: %d = %b", byte1, byte1);
+    `log $display("Cache: Sending byte: %d = %b", byte2, byte2);
     D1[15:8] = byte2; D1[7:0] = byte1;
   endtask
   task send_bytes_D2(input [7:0] byte1, input [7:0] byte2);
-    // `log; $display("Cache: Sending byte: %d = %b", byte1, byte1);
-    // `log; $display("Cache: Sending byte: %d = %b", byte2, byte2);
+    `log $display("Cache: Sending byte: %d = %b", byte1, byte1);
+    `log $display("Cache: Sending byte: %d = %b", byte2, byte2);
     D2[15:8] = byte2; D2[7:0] = byte1;
   endtask
   task receive_bytes_D1(output [7:0] byte1, output [7:0] byte2);
@@ -82,7 +82,7 @@ module Cache (
     req_tag = `discard_last_n_bits(A1_WIRE, CACHE_SET_SIZE);
     req_set = `last_n_bits(A1_WIRE, CACHE_SET_SIZE);
     #2 req_offset = A1_WIRE;
-    // `log; $display("tag = %b, set = %b, offset = %b", req_tag, req_set, req_offset);
+    `log $display("tag = %b, set = %b, offset = %b", req_tag, req_set, req_offset);
 
     found_line = -1;
     for (int test_line = 0; test_line < CACHE_WAY; ++test_line)
@@ -90,7 +90,7 @@ module Cache (
   endtask
 
   task read_line_from_MEM(input [CACHE_TAG_SIZE-1:0] tag, input [CACHE_SET_SIZE-1:0] set, input int line);  // Called on CLK = 0, return: CLK = 1
-    // `log; $display("Reading line from MemCTR");
+    `log $display("Reading line from MemCTR");
     tags[req_set][found_line] = req_tag;
 
     C2 = C2_READ_LINE;
@@ -98,16 +98,12 @@ module Cache (
     A2[CACHE_SET_SIZE-1:0] = set;
     #2 `close_bus2;
     wait(CLK == 1 && C2_WIRE == C2_RESPONSE);
-    // `log; $display("Cache received C2_RESPONSE");
+    `log $display("Cache received C2_RESPONSE");
 
     for (int bytes_start = 0; bytes_start < CACHE_LINE_SIZE; bytes_start += 2) begin
       receive_bytes_D2(data[set][line][bytes_start], data[set][line][bytes_start + 1]);
-      // `log; $display("Cache: Wrote byte %d = %b to data[%0d][%0d][%0d]",
-      //   data[set][line][bytes_start], data[set][line][bytes_start], set, line, bytes_start
-      // );
-      // `log; $display("Cache: Wrote byte %d = %b to data[%0d][%0d][%0d]",
-      //   data[set][line][bytes_start + 1], data[set][line][bytes_start + 1], set, line, bytes_start + 1
-      // );
+      `log $display("Cache: Wrote byte %d = %b to data[%0d][%0d][%0d]", data[set][line][bytes_start], data[set][line][bytes_start], set, line, bytes_start);
+      `log $display("Cache: Wrote byte %d = %b to data[%0d][%0d][%0d]", data[set][line][bytes_start + 1], data[set][line][bytes_start + 1], set, line, bytes_start + 1);
       if (bytes_start + 2 < CACHE_LINE_SIZE) #2;  // Ждать надо везде, кроме последней передачи данных
     end
     valid[set][line] = 1;
@@ -126,11 +122,11 @@ module Cache (
 
     #1 `close_bus2;
     wait(CLK == 1 && C2_WIRE == C2_RESPONSE);
-    // `log; $display("Cache received C2_RESPONSE");
+    `log $display("Cache received C2_RESPONSE");
   endtask
 
   task invalidate_line(input [CACHE_SET_SIZE-1:0] set, input int line);  // Called on CLK = 0, return: CLK = 1
-    // $display("Invalidating line: set = %b, line = %0d | D: %0d", set, line, dirty[set][line]);
+    `log $display("Invalidating line: set = %b, line = %0d | D: %0d", set, line, dirty[set][line]);
     // Если линия Dirty, то нужно сдампить её содержимое в Mem
     if (dirty[set][line]) write_line_to_MEM(set, line);
 
@@ -155,19 +151,19 @@ module Cache (
   endtask
 
   task handle_c1_read(int read_bits);  // Called on CLK = 1
-    // `log; $display("Cache: C1_READ%0d, A1 = %b", read_bits, A1_WIRE);
+    `log $display("Cache: C1_READ%0d, A1 = %b", read_bits, A1_WIRE);
     listening_bus1 = 0; parse_A1();
 
     #1 C1 = C1_NOP;
     if (found_line == -1) begin
-      // $display("Line not found, finding spare one");
+      `log $display("Line not found, finding spare one");
       ++cache_misses;
       #(CACHE_MISS_DELAY - 4);
       find_spare_line();
       #1 read_line_from_MEM(req_tag, req_set, found_line);
 
     end else begin
-      // $display("Found line #%0d", found_line);
+      `log $display("Found line #%0d", found_line);
       ++cache_hits;
       #(CACHE_HIT_DELAY - 5);
     end
@@ -188,7 +184,7 @@ module Cache (
   endtask
 
   task handle_c1_write(int write_bits);  // Called on CLK = 1
-    // `log; $display("Cache: C1_WRITE%0d, A1 = %b", write_bits, A1_WIRE);
+    `log $display("Cache: C1_WRITE%0d, A1 = %b", write_bits, A1_WIRE);
     listening_bus1 = 0;
 
     fork  // duration: 2 tacks
@@ -205,7 +201,7 @@ module Cache (
 
     #1 C1 = C1_NOP;
     if (found_line == -1) begin
-      // $display("Line not found, finding spare one");
+      `log $display("Line not found, finding spare one");
       ++cache_misses;
       #(CACHE_MISS_DELAY - 4);
       find_spare_line();
@@ -214,7 +210,7 @@ module Cache (
       #1 C1 = C1_RESPONSE;
 
     end else begin
-      // $display("Found line #%0d", found_line);
+      `log $display("Found line #%0d", found_line);
       ++cache_hits;
       #(CACHE_HIT_DELAY - 5);
       #1 C1 = C1_RESPONSE;
@@ -227,9 +223,7 @@ module Cache (
 
     for (int i = 0; i < write_bits / 8; i += 1) begin
       data[req_set][found_line][req_offset + i] = write_buffer[i];
-      // `log; $display("Cache: Wrote byte %d = %b to data[%0d][%0d][%0d]",
-      //   write_buffer[i], write_buffer[i], req_set, found_line, req_offset + i
-      // );
+      `log $display("Cache: Wrote byte %d = %b to data[%0d][%0d][%0d]", write_buffer[i], write_buffer[i], req_set, found_line, req_offset + i);
     end
 
     #2 `close_bus1; listening_bus1 = 1;
@@ -237,7 +231,7 @@ module Cache (
 
   always @(posedge CLK) begin
     if (listening_bus1) case (C1_WIRE)
-      // C1_NOP: begin `log; $display("Cache: C1_NOP"); end
+      C1_NOP: begin `log $display("Cache: C1_NOP"); end
 
       C1_READ8:  handle_c1_read(8);
       C1_READ16: handle_c1_read(16);
@@ -248,20 +242,20 @@ module Cache (
       C1_WRITE32: handle_c1_write(32);
 
       C1_INVALIDATE_LINE: begin
-        // `log; $display("Cache: C1_INVALIDATE_LINE, A1 = %b", A1_WIRE);
+        `log $display("Cache: C1_INVALIDATE_LINE, A1 = %b", A1_WIRE);
         listening_bus1 = 0; parse_A1();
         #1 C1 = C1_NOP;
 
         if (found_line == -1) begin
-          // $display("Line not found");
+          $display("Line not found");
           #(CACHE_HIT_DELAY - 5);  // Для реалистичности поставим задежку между C1_INVALIDATE_LINE и отправкой данных/C1_RESPONSE равную CACHE_HIT_DELAY тактов
         end else begin
-          // $display("Found line #%0d", found_line);
+          $display("Found line #%0d", found_line);
           invalidate_line(req_set, found_line);
         end
 
         #1 C1 = C1_RESPONSE;
-        // `log; $display("Cache: Sending C1_RESPONSE");
+        `log $display("Cache: Sending C1_RESPONSE");
         #2 `close_bus1; listening_bus1 = 1;
       end
     endcase

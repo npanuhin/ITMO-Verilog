@@ -1,26 +1,7 @@
+`include "src/common.sv"
 `include "src/parameters.sv"
-`include "src/statistics.sv"
 `include "src/commands.sv"
-
-// Tools
-`define discard_last_n_bits(register, n) (register >> n)
-`define first_n_bits(register, n) `discard_last_n_bits(register, $size(register) - n)
-`define last_n_bits(register, n) (register & ((1 << n) - 1))
-
-// CLK = $time % 2 representation works much better, more suitable for debugging
-`define log $write("[%3t | CLK=%0d] ", $time, $time % 2);
-
-// BUSes
-`define map_bus1 \
-  reg[ADDR1_BUS_SIZE-1:0] A1 = 'z; assign A1_WIRE = A1; \
-  reg[DATA_BUS_SIZE-1 :0] D1 = 'z; assign D1_WIRE = D1; \
-  reg[CTR1_BUS_SIZE-1 :0] C1 = 'z; assign C1_WIRE = C1;
-`define map_bus2 \
-  reg[ADDR2_BUS_SIZE-1:0] A2 = 'z; assign A2_WIRE = A2; \
-  reg[DATA_BUS_SIZE-1 :0] D2 = 'z; assign D2_WIRE = D2; \
-  reg[CTR2_BUS_SIZE-1 :0] C2 = 'z; assign C2_WIRE = C2;
-`define close_bus1 C1 = 'z; A1 = 'z; D1 = 'z;
-`define close_bus2 C2 = 'z; A2 = 'z; D2 = 'z;
+`include "src/statistics.sv"
 
 `include "src/cache.sv"
 `include "src/mem.sv"
@@ -54,19 +35,19 @@ module cache_test;
     wait(CLK == 1 && C1_WIRE == C1_RESPONSE);
   endtask
 
-  // // For testing
+  // For testing
   // reg[CACHE_TAG_SIZE-1:0] tag;
   // reg[CACHE_SET_SIZE-1:0] set;
   // reg[CACHE_OFFSET_SIZE-1:0] offset;
   // reg[CACHE_ADDR_SIZE-1:0] address;
   // task send_bytes_D1(input [7:0] byte1, input [7:0] byte2);
-  //   `log; $display("CPU: Sending byte: %d = %b", byte1, byte1);
-  //   `log; $display("CPU: Sending byte: %d = %b", byte2, byte2);
+  //   `log $display("CPU: Sending byte: %d = %b", byte1, byte1);
+  //   `log $display("CPU: Sending byte: %d = %b", byte2, byte2);
   //   D1[15:8] = byte2; D1[7:0] = byte1;
   // endtask
   // task receive_bytes_D1;
-  //   `log; $display("CPU: Received byte: %d = %b", D1_WIRE[7:0], D1_WIRE[7:0]);
-  //   `log; $display("CPU: Received byte: %d = %b", D1_WIRE[15:8], D1_WIRE[15:8]);
+  //   `log $display("CPU: Received byte: %d = %b", D1_WIRE[7:0], D1_WIRE[7:0]);
+  //   `log $display("CPU: Received byte: %d = %b", D1_WIRE[15:8], D1_WIRE[15:8]);
   // endtask
 
   // initial begin
@@ -80,18 +61,16 @@ module cache_test;
     // $display("Testbench: sending C1_INVALIDATE_LINE, A1 = %b|%b|%b\n", tag, set, offset);
 
     // // Передача команды и первой части адреса
-    // `log; $display("<Sending C1 and first half of A1>");
+    // `log $display("<Sending C1 and first half of A1>");
     // C1 = C1_INVALIDATE_LINE;
     // A1 = `discard_last_n_bits(address, CACHE_OFFSET_SIZE);
     // #2;
     // // Передача второй части адреса
-    // `log; $display("<Sending second half of A1>");
+    // `log $display("<Sending second half of A1>");
     // A1 = `last_n_bits(address, CACHE_OFFSET_SIZE);
-    // #2;
     // // Завершение взаимодействия
-    // `log; $display("<Finished sending>");
     // wait_response();
-    // `log; $display("CPU received C1_RESPONSE");
+    // `log $display("CPU received C1_RESPONSE");
 
     // ---------------------------------------------- Test C1_READ8/16/32 ----------------------------------------------
     // tag = 1;
@@ -104,18 +83,18 @@ module cache_test;
     // // Прочитаем один и те же данные два раза - во второй раз не должно быть похода в память
     // for (int iteration = 0; iteration < 2; ++iteration) begin
     //   // Передача команды и первой части адреса
-    //   `log; $display("<Sending C1 and first half of A1>");
+    //   `log $display("<Sending C1 and first half of A1>");
     //   C1 = C1_READ32;
     //   A1 = `discard_last_n_bits(address, CACHE_OFFSET_SIZE);
     //   #2
     //   // Передача второй части адреса
-    //   `log; $display("<Sending second half of A1>");
+    //   `log $display("<Sending second half of A1>");
     //   A1 = `last_n_bits(address, CACHE_OFFSET_SIZE);
     //   #2
     //   // Завершение взаимодействия
-    //   `log; $display("<Finished sending>");
+    //   `log $display("<Finished sending>");
     //   wait_response();
-    //   `log; $display("CPU received C1_RESPONSE");
+    //   `log $display("CPU received C1_RESPONSE");
 
     //   for (int bbytes_start = 0; bbytes_start < 32 / 8; bbytes_start += 2) begin
     //     receive_bytes_D1();
@@ -136,20 +115,20 @@ module cache_test;
     // // Прочитаем один и те же данные два раза - во второй раз не должно быть похода в память
     // for (int iteration = 0; iteration < 2; ++iteration) begin
     //   // Передача команды, первой части адреса и первой части данных
-    //   `log; $display("<Sending C1 and first half of A1>");
+    //   `log $display("<Sending C1 and first half of A1>");
     //   C1 = C1_WRITE32;
     //   A1 = `discard_last_n_bits(address, CACHE_OFFSET_SIZE);
     //   D1[15:8] = 200; D1[7:0] = 124;
     //   #2
     //   // Передача второй части адреса и второй части данных
-    //   `log; $display("<Sending second half of A1>");
+    //   `log $display("<Sending second half of A1>");
     //   A1 = `last_n_bits(address, CACHE_OFFSET_SIZE);
     //   D1[15:8] = 37; D1[7:0] = 5;
     //   #2
     //   // Завершение взаимодействия
-    //   `log; $display("<Finished sending>");
+    //   `log $display("<Finished sending>");
     //   wait_response();
-    //   `log; $display("CPU received C1_RESPONSE");
+    //   `log $display("CPU received C1_RESPONSE");
 
     //   $display("\n---------- Iteration %0d finished ----------\n", iteration);
     //   #3;
@@ -166,7 +145,7 @@ module cache_test;
   // --------------------------------------------------- Actual task ---------------------------------------------------
   // ---------- READ8/16/32 ----------
   task common_read(input int address, input int command);
-    // `log; $display("CPU sending READ command");
+    // `log $display("CPU sending READ command");
     C1 = command;
     A1 = `discard_last_n_bits(address, CACHE_OFFSET_SIZE);
     #2 A1 = `last_n_bits(address, CACHE_OFFSET_SIZE);
@@ -194,7 +173,7 @@ module cache_test;
   endtask
   // ---------- WRITE8/16/32 ----------
   task common_write(input int address, input int command);
-    // `log; $display("CPU sending WRITE command");
+    // `log $display("CPU sending WRITE command");
     C1 = command;
     A1 = `discard_last_n_bits(address, CACHE_OFFSET_SIZE);
     #2 A1 = `last_n_bits(address, CACHE_OFFSET_SIZE);
@@ -273,7 +252,7 @@ module cache_test;
 
   // initial #1000 $finish;
 
-  // always @(CLK) begin
-  //   `log; $display("C1_WIRE = %d, C2_WIRE = %d", C1_WIRE, C2_WIRE);
-  // end
+  always @(CLK) begin
+    `log $display("C1_WIRE = %d, C2_WIRE = %d", C1_WIRE, C2_WIRE);
+  end
 endmodule
