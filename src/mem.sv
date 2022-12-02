@@ -1,7 +1,7 @@
 module MemCTR (
   input CLK,
   inout[ADDR2_BUS_SIZE-1:0] A2_WIRE,
-  inout[DATA_BUS_SIZE-1:0] D2_WIRE,
+  inout[DATA_BUS_SIZE-1 :0] D2_WIRE,
   inout[CTR2_BUS_SIZE-1 :0] C2_WIRE,
   input RESET,
   input M_DUMP

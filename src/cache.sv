@@ -1,10 +1,10 @@
 module Cache (
   input CLK,
   inout[ADDR1_BUS_SIZE-1:0] A1_WIRE,
-  inout[DATA_BUS_SIZE-1:0] D1_WIRE,
+  inout[DATA_BUS_SIZE-1 :0] D1_WIRE,
   inout[CTR1_BUS_SIZE-1 :0] C1_WIRE,
   inout[ADDR2_BUS_SIZE-1:0] A2_WIRE,
-  inout[DATA_BUS_SIZE-1:0] D2_WIRE,
+  inout[DATA_BUS_SIZE-1 :0] D2_WIRE,
   inout[CTR2_BUS_SIZE-1 :0] C2_WIRE,
   input RESET,
   input C_DUMP
@@ -33,7 +33,7 @@ module Cache (
     LRU_bit[set][line] = 0;
     valid[set][line] = 0;  // For testing, should be 0
     dirty[set][line] = 0;  // For testing, should be 0
-    tags[set][line] = 'x;   // For testing, should be 'x
+    tags[set][line] = 'x;  // For testing, should be 'x
     for (int bbyte = 0; bbyte < CACHE_LINE_SIZE; ++bbyte)  // Optional
       data[set][line][bbyte] = 'x;  // For testing, should be 'x
   endtask
