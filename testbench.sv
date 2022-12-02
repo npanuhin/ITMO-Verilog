@@ -204,9 +204,9 @@ module cache_test;
     join
   endtask
 
-  localparam M = 64;
-  localparam N = 60;
-  localparam K = 32;
+  localparam M = 64;  // #define M 64
+  localparam N = 60;  // #define N 60
+  localparam K = 32;  // #define K 32
 
   // reg[7:0]  a[M][K];  // int8  a[M][K]; — 1 byte
   // reg[15:0] b[K][N];  // int16 b[K][N]; — 2 bytes
@@ -214,7 +214,7 @@ module cache_test;
   int pa, pb, pc, s, tmp_mul, tmp_pa_k, tmp_pb_x;
   int a = 0,
       b = M * K,
-      c = pb + 2 * K * N;
+      c = b + 2 * K * N;
 
   initial begin
     #2 pa = a;                                // int8 *pa = a;
