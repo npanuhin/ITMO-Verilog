@@ -1,1 +1,2 @@
-iverilog -g2012 -o hello_world.out design.sv testbench.sv && vvp hello_world.out
+@echo off
+iverilog -g2012 -o nand2.out design.sv testbench.sv && vvp nand2.out
