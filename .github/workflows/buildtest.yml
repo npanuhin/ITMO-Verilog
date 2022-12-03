@@ -1,0 +1,48 @@
+name: Test Verilog build
+
+on: [workflow_dispatch, push]
+
+jobs:
+  buildtest:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build testbench
+        id: build_testbench
+        run: |
+          .github/workflows/iverilog/bin/iverilog -g2012 -o testbench.out testbench.sv > build_log.txt
+          type build_log.txt
+
+      - name: Run testbench
+        id: run_testbench
+        run: |
+          .github/workflows/iverilog/bin/vvp testbench.out > run_log.txt
+          type run_log.txt
+
+      # - name: Update readme
+      #   run: |
+      #       $text = "
+      #         <h1 align=`"center`">Test log</h1>
+      #         <div align=`"center`">
+      #           <a href=`"../../actions/workflows/buildtest.yml`"><img src=`"../../actions/workflows/buildtest.yml/badge.svg`"></a>
+      #         </div>
+
+      #         ### Compile:
+      #         ``````
+      #         $(Get-Content build_log.txt | Out-String)``````
+
+      #         ### Run:
+      #         ``````
+      #         $(Get-Content run_log.txt | Out-String)``````
+      #       "
+      #       $text -replace '\n +', "`n" -replace '(^\n|\n$)', '' | Out-File -encoding ASCII README.md
+
+      # - name: Commit and push README.md
+      #   run: |
+      #     git config --global user.name 'GitHub Actions'
+      #     git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
+      #     git add README.md
+      #     git commit -m "[AUTO] Updated README"
+      #     git push
