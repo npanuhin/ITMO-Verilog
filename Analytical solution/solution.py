@@ -10,8 +10,8 @@ class Cache:
         self.valid = [[0] * CACHE_WAY for _ in range(CACHE_SETS_COUNT)]
         self.dirty = [[0] * CACHE_WAY for _ in range(CACHE_SETS_COUNT)]
 
-        self.read8 = self.read16 = self.read
-        self.write32 = self.write
+        self.read8 = self.read16 = lambda addr: self.access(addr)
+        self.write32 = lambda addr: self.access(addr, True)
 
     def wait_clk(self, clk_value):
         global TIME
@@ -62,7 +62,7 @@ class Cache:
             TIME += 0.5
         return found_line
 
-    def read(self, addr):
+    def access(self, addr, is_write=False):
         global TIME, cache_hits, cache_misses
         self.wait_clk(0)  # To send command
         self.wait_clk(1)  # To receive command
@@ -84,42 +84,14 @@ class Cache:
             cache_hits += 1
             TIME += CACHE_HIT_DELAY - 2.5
 
-        self.LRU_bit[req_set][found_line] = 1
-        self.LRU_bit[req_set][not found_line] = 0
-
-        TIME += 0.5  # C1_RESPONSE
-        # send_bytes не нужен, так как посылаем либо 8, либо 16 бит, одновременно с C1_RESPONSE
-        self.wait_clk(1)
-        TIME += 0.5  # // Wait for CLK -> 0
-
-    def write(self, addr):
-        global TIME, cache_hits, cache_misses
-        self.wait_clk(0)  # To send command
-        self.wait_clk(1)  # To receive command
-        # req_offset = addr % (2 ** CACHE_OFFSET_SIZE)
-        addr = addr >> CACHE_OFFSET_SIZE
-        req_tag = addr >> CACHE_SET_SIZE
-        req_set = addr % (2 ** CACHE_SET_SIZE)
-        found_line = self.find_valid_line(req_tag, req_set)
-        TIME += 1  # parse_A1
-        TIME += 0.5  # C1_NOP
-
-        if found_line is None:
-            cache_misses += 1
-            TIME += CACHE_MISS_DELAY - 2
-            found_line = self.find_spare_line(req_set)
-            TIME += 0.5
-            self.read_line_from_MEM(req_tag, req_set, found_line)
-        else:
-            cache_hits += 1
-            TIME += CACHE_HIT_DELAY - 2.5
-
-        self.dirty[req_set][found_line] = 1
+        if is_write:
+            self.dirty[req_set][found_line] = 1
 
         self.LRU_bit[req_set][found_line] = 1
         self.LRU_bit[req_set][not found_line] = 0
 
         TIME += 0.5  # C1_RESPONSE
+        # В READ send_bytes не нужен, так как посылаем либо 8, либо 16 бит, одновременно с C1_RESPONSE
         self.wait_clk(1)
         TIME += 0.5  # // Wait for CLK -> 0
 
@@ -127,6 +99,19 @@ class Cache:
 cache = Cache()
 
 # ---------------------------------------------------- Actual task -----------------------------------------------------
+
+
+def assign(value):
+    global TIME
+    TIME += 1
+    return value
+
+
+def add(target, value):
+    global TIME
+    TIME += 1
+    return target + value
+
 
 M = 64              # #define M 64
 N = 60              # #define N 60
@@ -136,29 +121,22 @@ a = 0               # int8 a[M][K];
 b = M * K           # int16 b[K][N];
 c = b + 2 * K * N   # int32 c[M][N];
 
-pa = a
-TIME += 1
-pc = c
-TIME += 1
+pa = assign(a)
+pc = assign(c)
 for y in range(M):
     for x in range(N):
-        pb = b
-        TIME += 1
-        s = 0
-        TIME += 1
+        pb = assign(b)
+        s = assign(0)
         for k in range(K):
             cache.read8(pa + k)
             cache.read16(pb + 2 * x)
             TIME += 5 + 1  # 1 умножение и 1 сложение
-            pb += 2 * N
-            TIME += 1
+            pb = add(pb, 2 * N)
             TIME += 1  # end of "for"
         cache.write32(pc + 4 * x)
         TIME += 1  # end of "for"
-    pa += K
-    TIME += 1
-    pc += 4 * N
-    TIME += 1
+    pa = add(pa, K)
+    pc = add(pc, 4 * N)
     TIME += 1  # end of "for"
 
 TIME += 1  # end of function
