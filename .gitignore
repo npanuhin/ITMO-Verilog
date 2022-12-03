@@ -7,3 +7,6 @@
 # MS Word temporary files
 ~$*.docx
 ~*.tmp
+
+# python
+__pycache__/

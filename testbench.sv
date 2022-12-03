@@ -246,7 +246,7 @@ module cache_test;
     // #10 $finish;
   end
 
-  // initial #1000 $finish;
+  // initial #10000 $finish;
 
   always @(CLK) begin
     `log $display("C1_WIRE = %d, C2_WIRE = %d", C1_WIRE, C2_WIRE);

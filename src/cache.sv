@@ -91,7 +91,7 @@ module Cache (
 
   task read_line_from_MEM(input [CACHE_TAG_SIZE-1:0] tag, input [CACHE_SET_SIZE-1:0] set, input int line);  // Called on CLK = 0, return: CLK = 1
     `log $display("Reading line from MemCTR");
-    tags[req_set][found_line] = req_tag;
+    tags[req_set][found_line] = tag;
 
     C2 = C2_READ_LINE;
     A2[CACHE_TAG_SIZE+CACHE_SET_SIZE-1:CACHE_SET_SIZE] = tag;
@@ -207,13 +207,11 @@ module Cache (
       find_spare_line();
       #1 read_line_from_MEM(req_tag, req_set, found_line);
       // TODO here, see report
-      #1 C1 = C1_RESPONSE;
 
     end else begin
       `log $display("Found line #%0d", found_line);
       ++cache_hits;
       #(CACHE_HIT_DELAY - 5);
-      #1 C1 = C1_RESPONSE;
     end
 
     dirty[req_set][found_line] = 1;
@@ -226,6 +224,7 @@ module Cache (
       `log $display("Cache: Wrote byte %d = %b to data[%0d][%0d][%0d]", write_buffer[i], write_buffer[i], req_set, found_line, req_offset + i);
     end
 
+    #1 C1 = C1_RESPONSE;
     #2 `close_bus1; listening_bus1 = 1;
   endtask
 
