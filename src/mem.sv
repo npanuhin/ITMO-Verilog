@@ -28,7 +28,7 @@ module MemCTR (
 
   // Dumping
   always @(posedge M_DUMP)
-    for (int i = 0; i < 100; ++i)  // 100 for testing, should be MEM_SIZE
+    for (int i = 0; i < 100; ++i)  // 100 for testing, should be MEM_SIZE (warning: MEM_SIZE ~= 500'000, you don't want to print this)
       $display("Byte %2d: %d = %b", i, ram[i], ram[i]);
 
   // --------------------------------------------------- Main logic ----------------------------------------------------
@@ -40,7 +40,7 @@ module MemCTR (
   endtask
 
   task parse_A2;
-    address = A2_WIRE << CACHE_OFFSET_SIZE;
+    address = A2_WIRE; address <<= CACHE_OFFSET_SIZE;
   endtask
 
   always @(posedge CLK) begin

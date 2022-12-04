@@ -1,12 +1,10 @@
-# iverilog compilation files
+# iverilog compilation files & dumps
 *.out
-
-# iverilog dumps
 *.vcd
 
 # MS Word temporary files
 ~$*.docx
 ~*.tmp
 
-# python
+# Python
 __pycache__/

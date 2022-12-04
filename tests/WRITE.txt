@@ -505,11 +505,11 @@ Testbench: sending C1_WRITE32, A1 = 0000000001|00010|0011
 [428 | CLK=0] C1_WIRE = 0, C2_WIRE = 1
 [429 | CLK=1] Cache: Wrote byte 154 = 10011010 to data[2][1][14]
 [429 | CLK=1] Cache: Wrote byte  68 = 01000100 to data[2][1][15]
+[429 | CLK=1] Cache: Wrote byte 124 = 01111100 to data[2][1][3]
+[429 | CLK=1] Cache: Wrote byte 200 = 11001000 to data[2][1][4]
+[429 | CLK=1] Cache: Wrote byte   5 = 00000101 to data[2][1][5]
+[429 | CLK=1] Cache: Wrote byte  37 = 00100101 to data[2][1][6]
 [429 | CLK=1] C1_WIRE = 0, C2_WIRE = 1
-[430 | CLK=0] Cache: Wrote byte 124 = 01111100 to data[2][1][3]
-[430 | CLK=0] Cache: Wrote byte 200 = 11001000 to data[2][1][4]
-[430 | CLK=0] Cache: Wrote byte   5 = 00000101 to data[2][1][5]
-[430 | CLK=0] Cache: Wrote byte  37 = 00100101 to data[2][1][6]
 [430 | CLK=0] C1_WIRE = 7, C2_WIRE = z
 [431 | CLK=1] C1_WIRE = 7, C2_WIRE = z
 [431 | CLK=1] CPU received C1_RESPONSE
@@ -530,11 +530,11 @@ Testbench: sending C1_WRITE32, A1 = 0000000001|00010|0011
 [438 | CLK=0] C1_WIRE = 0, C2_WIRE = z
 [439 | CLK=1] C1_WIRE = 0, C2_WIRE = z
 [440 | CLK=0] C1_WIRE = 0, C2_WIRE = z
+[441 | CLK=1] Cache: Wrote byte 124 = 01111100 to data[2][1][3]
+[441 | CLK=1] Cache: Wrote byte 200 = 11001000 to data[2][1][4]
+[441 | CLK=1] Cache: Wrote byte   5 = 00000101 to data[2][1][5]
+[441 | CLK=1] Cache: Wrote byte  37 = 00100101 to data[2][1][6]
 [441 | CLK=1] C1_WIRE = 0, C2_WIRE = z
-[442 | CLK=0] Cache: Wrote byte 124 = 01111100 to data[2][1][3]
-[442 | CLK=0] Cache: Wrote byte 200 = 11001000 to data[2][1][4]
-[442 | CLK=0] Cache: Wrote byte   5 = 00000101 to data[2][1][5]
-[442 | CLK=0] Cache: Wrote byte  37 = 00100101 to data[2][1][6]
 [442 | CLK=0] C1_WIRE = 7, C2_WIRE = z
 [443 | CLK=1] C1_WIRE = 7, C2_WIRE = z
 [443 | CLK=1] CPU received C1_RESPONSE

@@ -125,16 +125,17 @@ module Cache (
     `log $display("Cache received C2_RESPONSE");
   endtask
 
-  task invalidate_line(input [CACHE_SET_SIZE-1:0] set, input int line);  // Called on CLK = 0, return: CLK = 1
+  task invalidate_line(input [CACHE_SET_SIZE-1:0] set, input int line);  // Called on CLK = 0, return: CLK = 0
     `log $display("Invalidating line: set = %b, line = %0d | D: %0d", set, line, dirty[set][line]);
     // Если линия Dirty, то нужно сдампить её содержимое в Mem
     if (dirty[set][line]) write_line_to_MEM(set, line);
 
     // reset_line(set, line);  // Правильнее будет сделать valid[set][line] = 0, но так проще тестировать
     valid[set][line] = 0;
+    #1;  // Wait for CLK -> 0
   endtask
 
-  task find_spare_line;  // Called on CLK = 0, return: CLK = 1
+  task find_spare_line;  // Called on CLK = 0, return: CLK = 0
     // Сначала ищем пустую линию
     for (int test_line = 0; test_line < CACHE_WAY; ++test_line)
       if (valid[req_set][test_line] == 0) found_line = test_line;
@@ -145,8 +146,6 @@ module Cache (
         if (LRU_bit[req_set][test_line] == 0) found_line = test_line;
 
       invalidate_line(req_set, found_line);
-    end else begin
-      #1;  // TODO
     end
   endtask
 
@@ -160,7 +159,7 @@ module Cache (
       ++cache_misses;
       #(CACHE_MISS_DELAY - 4);
       find_spare_line();
-      #1 read_line_from_MEM(req_tag, req_set, found_line);
+      read_line_from_MEM(req_tag, req_set, found_line);
 
     end else begin
       `log $display("Found line #%0d", found_line);
@@ -205,8 +204,7 @@ module Cache (
       ++cache_misses;
       #(CACHE_MISS_DELAY - 4);
       find_spare_line();
-      #1 read_line_from_MEM(req_tag, req_set, found_line);
-      // TODO here, see report
+      read_line_from_MEM(req_tag, req_set, found_line);
 
     end else begin
       `log $display("Found line #%0d", found_line);
@@ -247,13 +245,13 @@ module Cache (
 
         if (found_line == -1) begin
           $display("Line not found");
-          #(CACHE_HIT_DELAY - 5);  // Для реалистичности поставим задежку между C1_INVALIDATE_LINE и отправкой данных/C1_RESPONSE равную CACHE_HIT_DELAY тактов
+          #(CACHE_HIT_DELAY - 4);  // Для реалистичности поставим задежку между C1_INVALIDATE_LINE и отправкой данных/C1_RESPONSE равную CACHE_HIT_DELAY тактов
         end else begin
           $display("Found line #%0d", found_line);
           invalidate_line(req_set, found_line);
         end
 
-        #1 C1 = C1_RESPONSE;
+        C1 = C1_RESPONSE;
         `log $display("Cache: Sending C1_RESPONSE");
         #2 `close_bus1; listening_bus1 = 1;
       end

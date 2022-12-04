@@ -44,15 +44,16 @@ class Cache:
                 return line
 
     def invalidate_line(self, sset, line):
+        global TIME
         if self.lines[sset][line].dirty:
             self.write_line_to_MEM()
         self.lines[sset][line].valid = False
+        TIME += 0.5
 
     def find_spare_line(self, sset):
         global TIME
         for line in range(CACHE_WAY):
             if not self.lines[sset][line].valid:
-                TIME += 0.5
                 return line
 
         for line in range(CACHE_WAY):
@@ -76,7 +77,6 @@ class Cache:
             self.misses += 1
             TIME += CACHE_MISS_DELAY - 2
             found_line = self.find_spare_line(req_set)
-            TIME += 0.5
             self.read_line_from_MEM(req_tag, req_set, found_line)
         else:
             self.hits += 1
