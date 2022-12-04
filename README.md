@@ -1,7 +1,7 @@
 <h1 align="center">CPU-Cache-Mem on Verilog</h1>
 <h4 align="center">Homework on CPU-Cache-Mem modeling in Verilog for the Computer Architecture course at ITMO University</h4>
 
-- [Report (in Russian)](https://github.com/npanuhin/ITMO-Verilog/blob/master/report/report.pdf?raw=true)
+- [Report (in Russian)](https://github.com/npanuhin/ITMO-Verilog/blob/master/report.pdf?raw=true)
 
 ---
 
